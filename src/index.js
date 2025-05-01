@@ -20,7 +20,7 @@ const app = express();
 app.use(helmet());
 app.use(cors({
   origin: [
-    'https://insurance-crm.netlify.app', // Dominio de Netlify para producción
+    'https://venderapido.netlify.app', // Dominio de Netlify para producción
     'http://localhost:3000',
     'http://localhost:5173'
   ],
