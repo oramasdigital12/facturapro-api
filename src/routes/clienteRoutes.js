@@ -13,7 +13,6 @@ const router = express.Router();
  *       type: object
  *       required:
  *         - nombre
- *         - telefono
  *       properties:
  *         id:
  *           type: string
@@ -81,15 +80,15 @@ router.post('/',
   authenticateToken,
   [
     body('nombre').notEmpty().trim().escape(),
-    body('email').optional().isEmail().normalizeEmail(),
-    body('telefono').notEmpty(),
+    body('email').optional({ nullable: true }).isEmail().normalizeEmail(),
+    body('telefono').optional(),
     body('categoria').optional().isIn(['activo', 'pendiente', 'por_vencer', 'Vencido']),
-    body('fecha_nacimiento').optional().isDate(),
+    body('fecha_nacimiento').optional({ nullable: true }).isDate(),
     body('fecha_vencimiento').optional().isDate(),
     body('notas').optional().trim(),
     body('fecha_inicio').optional().isDate(),
     body('direccion').optional().trim(),
-    body('sexo').optional().isString()
+    body('sexo').optional({ nullable: true }).isString()
   ],
   clienteController.crearCliente
 );
@@ -199,15 +198,15 @@ router.put('/:id',
   authenticateToken,
   [
     body('nombre').optional().trim().escape(),
-    body('email').optional().isEmail().normalizeEmail(),
+    body('email').optional({ nullable: true }).isEmail().normalizeEmail(),
     body('telefono').optional(),
     body('categoria').optional().isIn(['activo', 'pendiente', 'por_vencer', 'Vencido']),
-    body('fecha_nacimiento').optional().isDate(),
+    body('fecha_nacimiento').optional({ nullable: true }).isDate(),
     body('fecha_vencimiento').optional().isDate(),
     body('notas').optional().trim(),
     body('fecha_inicio').optional().isDate(),
     body('direccion').optional().trim(),
-    body('sexo').optional().isString()
+    body('sexo').optional({ nullable: true }).isString()
   ],
   clienteController.actualizarCliente
 );

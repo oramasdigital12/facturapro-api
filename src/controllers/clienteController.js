@@ -6,6 +6,7 @@ export const crearCliente = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.error('Errores de validación en /api/clientes:', errors.array());
             return res.status(400).json({ errors: errors.array() });
         }
 

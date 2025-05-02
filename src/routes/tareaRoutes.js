@@ -47,6 +47,9 @@ const router = express.Router();
  *               cliente_id:
  *                 type: string
  *                 format: uuid
+ *               para_venta:
+ *                 type: boolean
+ *                 description: Indica si la tarea es para venta
  *     responses:
  *       201:
  *         description: Tarea creada
@@ -58,7 +61,8 @@ const router = express.Router();
 router.post('/', authenticateToken, [
   body('descripcion').notEmpty().trim(),
   body('fecha_hora').notEmpty().isISO8601(),
-  body('cliente_id').notEmpty().isUUID()
+  body('cliente_id').notEmpty().isUUID(),
+  body('para_venta').optional().isBoolean()
 ], crearTarea);
 
 /**
@@ -177,6 +181,9 @@ router.get('/:id', authenticateToken, obtenerTarea);
  *               cliente_id:
  *                 type: string
  *                 format: uuid
+ *               para_venta:
+ *                 type: boolean
+ *                 description: Indica si la tarea es para venta
  *     responses:
  *       200:
  *         description: Tarea actualizada
@@ -188,7 +195,8 @@ router.get('/:id', authenticateToken, obtenerTarea);
 router.put('/:id', authenticateToken, [
   body('descripcion').optional().trim(),
   body('fecha_hora').optional().isISO8601(),
-  body('cliente_id').optional().isUUID()
+  body('cliente_id').optional().isUUID(),
+  body('para_venta').optional().isBoolean()
 ], actualizarTarea);
 
 /**

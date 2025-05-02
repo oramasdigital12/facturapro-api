@@ -3,23 +3,23 @@ import { supabase } from '../config/supabase.js';
 const validarDatosCliente = (datos) => {
   const errores = [];
   
-  if (!datos.nombre || datos.nombre.trim().length < 2) {
+  if (!datos.nombre || typeof datos.nombre !== 'string' || datos.nombre.trim().length < 2) {
     errores.push('El nombre debe tener al menos 2 caracteres');
   }
   
-  if (datos.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email)) {
+  if (typeof datos.email === 'string' && datos.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email)) {
     errores.push('El email no es válido');
   }
   
-  if (datos.telefono && !/^\+?[\d\s-]{8,}$/.test(datos.telefono)) {
+  if (typeof datos.telefono === 'string' && datos.telefono && !/^\+?[\d\s-]{8,}$/.test(datos.telefono)) {
     errores.push('El teléfono no es válido');
   }
   
-  if (datos.fecha_nacimiento && isNaN(Date.parse(datos.fecha_nacimiento))) {
+  if (typeof datos.fecha_nacimiento === 'string' && datos.fecha_nacimiento && isNaN(Date.parse(datos.fecha_nacimiento))) {
     errores.push('La fecha de nacimiento no es válida');
   }
   
-  if (datos.fecha_vencimiento && isNaN(Date.parse(datos.fecha_vencimiento))) {
+  if (typeof datos.fecha_vencimiento === 'string' && datos.fecha_vencimiento && isNaN(Date.parse(datos.fecha_vencimiento))) {
     errores.push('La fecha de vencimiento no es válida');
   }
   
