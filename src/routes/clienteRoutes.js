@@ -52,6 +52,9 @@ const router = express.Router();
  *         sexo:
  *           type: string
  *           description: Sexo del cliente
+ *         identification_number:
+ *           type: string
+ *           description: Número de identificación del cliente (letras y números)
  */
 
 /**
@@ -88,7 +91,8 @@ router.post('/',
     body('notas').optional().trim(),
     body('fecha_inicio').optional().isDate(),
     body('direccion').optional().trim(),
-    body('sexo').optional({ nullable: true }).isString()
+    body('sexo').optional({ nullable: true }).isString(),
+    body('identification_number').optional({ nullable: true }).isString().trim()
   ],
   clienteController.crearCliente
 );
@@ -206,7 +210,8 @@ router.put('/:id',
     body('notas').optional().trim(),
     body('fecha_inicio').optional().isDate(),
     body('direccion').optional().trim(),
-    body('sexo').optional({ nullable: true }).isString()
+    body('sexo').optional({ nullable: true }).isString(),
+    body('identification_number').optional({ nullable: true }).isString().trim()
   ],
   clienteController.actualizarCliente
 );

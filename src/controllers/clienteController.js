@@ -11,7 +11,7 @@ export const crearCliente = async (req, res) => {
         }
 
         const supabase = getSupabaseForUser(req.token);
-        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas } = req.body;
+        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number } = req.body;
         const cliente = await Cliente.crear({
             nombre,
             email,
@@ -23,6 +23,7 @@ export const crearCliente = async (req, res) => {
             direccion,
             sexo,
             notas,
+            identification_number,
             user_id: req.user.id
         }, supabase);
 
@@ -74,7 +75,7 @@ export const actualizarCliente = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
         const supabase = getSupabaseForUser(req.token);
-        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas } = req.body;
+        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number } = req.body;
         const datosActualizados = {};
         if (nombre !== undefined) datosActualizados.nombre = nombre;
         if (email !== undefined) datosActualizados.email = email;
@@ -86,6 +87,7 @@ export const actualizarCliente = async (req, res) => {
         if (direccion !== undefined) datosActualizados.direccion = direccion;
         if (sexo !== undefined) datosActualizados.sexo = sexo;
         if (notas !== undefined) datosActualizados.notas = notas;
+        if (identification_number !== undefined) datosActualizados.identification_number = identification_number;
         const cliente = await Cliente.actualizar(req.params.id, datosActualizados, req.user.id, supabase);
         if (!cliente) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
