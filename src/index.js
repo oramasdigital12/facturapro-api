@@ -21,6 +21,7 @@ app.use(helmet());
 app.use(cors({
   origin: [
     'https://gestionapro.netlify.app',
+    'https://vendedorespro.netlify.app',
     'https://gestionaexpress.netlify.app',
     'https://gestionarapido.netlify.app',
     'https://venderapido.netlify.app', // Dominio de Netlify para producción
