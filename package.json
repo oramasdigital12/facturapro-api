@@ -10,28 +10,47 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --ci --coverage --watchAll=false",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "crm",
+    "whatsapp",
+    "api",
+    "nodejs",
+    "express",
+    "supabase",
+    "saas"
+  ],
+  "author": "VendedorPro Team",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.7",
+    "@supabase/supabase-js": "^2.39.4",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.18.3",
+    "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
+    "formidable": "^3.5.2",
     "helmet": "^7.1.0",
     "joi": "^17.12.2",
     "morgan": "^1.10.0",
     "stripe": "^14.21.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "supertest": "^7.1.1"
   }
 }

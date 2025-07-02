@@ -5,6 +5,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
+import logger from './config/logger.js';
+
+// Importar middlewares de seguridad
+import { apiLimiter, authLimiter, createLimiter, searchLimiter } from './middlewares/rateLimiter.js';
+import { sanitizeInput } from './middlewares/validation.js';
+
+// Importar controladores de health check
+import { healthCheck, readinessCheck, livenessCheck } from './controllers/healthController.js';
 
 // Importar rutas
 import clienteRoutes from './routes/clienteRoutes.js';
@@ -13,25 +21,62 @@ import ventaRoutes from './routes/ventaRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import negocioConfigRoutes from './routes/negocioConfigRoutes.js';
 import tareaRoutes from './routes/tareaRoutes.js';
+import categoriaNegocioRoutes from './routes/categoriaNegocioRoutes.js';
+import servicioNegocioRoutes from './routes/servicioNegocioRoutes.js';
 
 const app = express();
 
-// Middlewares
-app.use(helmet());
+// Middlewares de seguridad mejorados
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
 app.use(cors({
   origin: [
     'https://gestionapro.netlify.app',
     'https://vendedorpro.app',
     'https://gestionaexpress.netlify.app',
     'https://gestionarapido.netlify.app',
-    'https://venderapido.netlify.app', // Dominio de Netlify para producción
+    'https://venderapido.netlify.app',
     'http://localhost:3000',
     'http://localhost:5173'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json());
-app.use(morgan('dev'));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging mejorado
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => logger.http(message.trim())
+  }
+}));
+
+// Sanitización global de entrada
+app.use(sanitizeInput);
+
+// Rate limiting global
+app.use('/api', apiLimiter);
+
+// Endpoints de health check (sin rate limiting)
+app.get('/health', healthCheck);
+app.get('/ready', readinessCheck);
+app.get('/live', livenessCheck);
 
 /**
  * @swagger
@@ -53,16 +98,23 @@ app.use(morgan('dev'));
  *                   example: CRM WhatsApp API v1.0.0
  */
 app.get('/', (req, res) => {
-  res.json({ message: 'CRM WhatsApp API v1.0.0' });
+  res.json({ 
+    message: 'CRM WhatsApp API v1.0.0',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Rutas de la API
-app.use('/api/auth', authRoutes);
+// Rutas de la API con rate limiting específico
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use('/api/mensajes', mensajeRoutes);
 app.use('/api/ventas', ventaRoutes);
 app.use('/api/negocio-config', negocioConfigRoutes);
 app.use('/api/tareas', tareaRoutes);
+app.use('/api/categorias-negocio', categoriaNegocioRoutes);
+app.use('/api/servicios-negocio', servicioNegocioRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -73,23 +125,96 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   }
 }));
 
-// Manejo de errores global
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CategoriaNegocio:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         nombre:
+ *           type: string
+ *         orden:
+ *           type: integer
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *     ServicioNegocio:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         categoria_id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         nombre:
+ *           type: string
+ *         precio:
+ *           type: number
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ */
+
+// Manejo de errores global mejorado
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Error interno del servidor' });
+  logger.error('Error no manejado', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+    ip: req.ip
+  });
+
+  // No exponer detalles del error en producción
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    message: isDevelopment ? err.message : 'Algo salió mal',
+    ...(isDevelopment && { stack: err.stack }),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
+  logger.warn('Ruta no encontrada', {
+    path: req.path,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  res.status(404).json({
+    error: 'Ruta no encontrada',
+    message: `La ruta ${req.path} no existe`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+  logger.info(`🚀 Servidor iniciado correctamente`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0'
+  });
+  
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   console.log('📝 Documentación disponible en:');
   console.log(`   http://localhost:${PORT}/api-docs`);
+  console.log('🏥 Health checks disponibles en:');
+  console.log(`   http://localhost:${PORT}/health`);
+  console.log(`   http://localhost:${PORT}/ready`);
+  console.log(`   http://localhost:${PORT}/live`);
   console.log('\n📌 Rutas principales:');
   console.log('   GET    /');
   console.log('   GET    /api-docs');
@@ -101,4 +226,6 @@ app.listen(PORT, () => {
   console.log('   POST   /api/ventas');
   console.log('   POST   /api/negocio-config');
   console.log('   POST   /api/tareas');
+  console.log('   POST   /api/categorias-negocio');
+  console.log('   POST   /api/servicios-negocio');
 }); 

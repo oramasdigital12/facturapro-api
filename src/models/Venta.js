@@ -1,9 +1,9 @@
 import { supabase } from '../config/supabase.js';
 
 class Venta {
-  static async crear({ cliente_id, tipo, monto, fecha, user_id }) {
+  static async crear({ cliente_id, tipo, monto, fecha, user_id }, supabaseClient = supabase) {
     try {
-      const { data: venta, error } = await supabase
+      const { data: venta, error } = await supabaseClient
         .from('ventas')
         .insert([
           {
@@ -24,9 +24,9 @@ class Venta {
     }
   }
 
-  static async obtenerTodas(userId) {
+  static async obtenerTodas(userId, supabaseClient = supabase) {
     try {
-      const { data: ventas, error } = await supabase
+      const { data: ventas, error } = await supabaseClient
         .from('ventas')
         .select('*')
         .eq('user_id', userId)
@@ -39,9 +39,9 @@ class Venta {
     }
   }
 
-  static async obtenerPorId(ventaId, userId) {
+  static async obtenerPorId(ventaId, userId, supabaseClient = supabase) {
     try {
-      const { data: venta, error } = await supabase
+      const { data: venta, error } = await supabaseClient
         .from('ventas')
         .select('*')
         .eq('id', ventaId)
@@ -55,9 +55,9 @@ class Venta {
     }
   }
 
-  static async actualizar(ventaId, datosActualizados, userId) {
+  static async actualizar(ventaId, datosActualizados, userId, supabaseClient = supabase) {
     try {
-      const { data: venta, error } = await supabase
+      const { data: venta, error } = await supabaseClient
         .from('ventas')
         .update(datosActualizados)
         .eq('id', ventaId)
@@ -72,9 +72,9 @@ class Venta {
     }
   }
 
-  static async eliminar(ventaId, userId) {
+  static async eliminar(ventaId, userId, supabaseClient = supabase) {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('ventas')
         .delete()
         .eq('id', ventaId)
@@ -87,9 +87,9 @@ class Venta {
     }
   }
 
-  static async obtenerPorCliente(clienteId, userId) {
+  static async obtenerPorCliente(clienteId, userId, supabaseClient = supabase) {
     try {
-      const { data: ventas, error } = await supabase
+      const { data: ventas, error } = await supabaseClient
         .from('ventas')
         .select('*')
         .eq('cliente_id', clienteId)
@@ -103,8 +103,8 @@ class Venta {
     }
   }
 
-  static async obtenerPorFecha(userId, fechaInicio, fechaFin) {
-    const { data: ventas, error } = await supabase
+  static async obtenerPorFecha(userId, fechaInicio, fechaFin, supabaseClient = supabase) {
+    const { data: ventas, error } = await supabaseClient
       .from('ventas')
       .select(`
         *,
@@ -124,11 +124,11 @@ class Venta {
     return ventas;
   }
 
-  static async obtenerEstadisticasMensuales(userId, año, mes) {
+  static async obtenerEstadisticasMensuales(userId, año, mes, supabaseClient = supabase) {
     const fechaInicio = new Date(año, mes - 1, 1).toISOString();
     const fechaFin = new Date(año, mes, 0).toISOString();
 
-    const { data: ventas, error } = await supabase
+    const { data: ventas, error } = await supabaseClient
       .from('ventas')
       .select('monto, tipo')
       .eq('user_id', userId)

@@ -4,7 +4,7 @@ class User {
     static async register(email, password, fullName) {
         try {
             // Crear usuario en Supabase Auth
-            const { data: authUser, error: authError } = await supabase.auth.signUp({
+            const response = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -14,14 +14,14 @@ class User {
                 }
             });
 
-            if (authError) throw authError;
+            if (response.error) throw response.error;
 
             // Insertar usuario en la tabla users
             const { data: user, error: dbError } = await supabase
                 .from('users')
                 .insert([
                     {
-                        id: authUser.user.id,
+                        id: response.data.user.id,
                         email,
                         full_name: fullName
                     }
@@ -43,18 +43,19 @@ class User {
     static async login(email, password) {
         try {
             // Iniciar sesión con Supabase Auth
-            const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+            const response = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
-            if (signInError) throw signInError;
+            if (response.error) throw response.error;
+            if (!response.data || !response.data.session) throw new Error('Invalid credentials');
 
             // Obtener datos adicionales del usuario
-            const { data: user, error: dbError } = await supabase
+            let { data: user, error: dbError } = await supabase
                 .from('users')
                 .select('*')
-                .eq('id', session.user.id)
+                .eq('id', response.data.session.user.id)
                 .single();
 
             if (dbError) {
@@ -63,9 +64,9 @@ class User {
                     .from('users')
                     .insert([
                         {
-                            id: session.user.id,
+                            id: response.data.session.user.id,
                             email: email,
-                            full_name: session.user.user_metadata.full_name || email
+                            full_name: response.data.session.user.user_metadata.full_name || email
                         }
                     ])
                     .select()
@@ -82,7 +83,7 @@ class User {
                     fullName: user.full_name,
                     role: user.role
                 },
-                token: session.access_token
+                token: response.data.session.access_token
             };
         } catch (error) {
             throw error;

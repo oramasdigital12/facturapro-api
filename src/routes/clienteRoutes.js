@@ -1,7 +1,9 @@
 import express from 'express';
-import { body } from 'express-validator';
 import * as clienteController from '../controllers/clienteController.js';
 import { authenticateToken } from '../middlewares/auth.js';
+import { validateRequest, validateUUID } from '../middlewares/validation.js';
+import { createLimiter, searchLimiter } from '../middlewares/rateLimiter.js';
+import { crearClienteValidator, actualizarClienteValidator } from '../validators/clienteValidator.js';
 
 const router = express.Router();
 
@@ -81,19 +83,9 @@ const router = express.Router();
  */
 router.post('/',
   authenticateToken,
-  [
-    body('nombre').notEmpty().trim().escape(),
-    body('email').optional({ nullable: true }).isEmail().normalizeEmail(),
-    body('telefono').optional(),
-    body('categoria').optional().isIn(['activo', 'pendiente', 'por_vencer', 'Vencido']),
-    body('fecha_nacimiento').optional({ nullable: true }).isDate(),
-    body('fecha_vencimiento').optional().isDate(),
-    body('notas').optional().trim(),
-    body('fecha_inicio').optional().isDate(),
-    body('direccion').optional().trim(),
-    body('sexo').optional({ nullable: true }).isString(),
-    body('identification_number').optional({ nullable: true }).isString().trim()
-  ],
+  createLimiter,
+  crearClienteValidator,
+  validateRequest,
   clienteController.crearCliente
 );
 
@@ -142,7 +134,11 @@ router.get('/', authenticateToken, clienteController.obtenerClientes);
  *               items:
  *                 $ref: '#/components/schemas/Cliente'
  */
-router.get('/buscar', authenticateToken, clienteController.buscarClientes);
+router.get('/buscar', 
+  authenticateToken, 
+  searchLimiter,
+  clienteController.buscarClientes
+);
 
 /**
  * @swagger
@@ -167,7 +163,11 @@ router.get('/buscar', authenticateToken, clienteController.buscarClientes);
  *             schema:
  *               $ref: '#/components/schemas/Cliente'
  */
-router.get('/:id', authenticateToken, clienteController.obtenerCliente);
+router.get('/:id', 
+  authenticateToken, 
+  validateUUID('id'),
+  clienteController.obtenerCliente
+);
 
 /**
  * @swagger
@@ -200,19 +200,9 @@ router.get('/:id', authenticateToken, clienteController.obtenerCliente);
  */
 router.put('/:id',
   authenticateToken,
-  [
-    body('nombre').optional().trim().escape(),
-    body('email').optional({ nullable: true }).isEmail().normalizeEmail(),
-    body('telefono').optional(),
-    body('categoria').optional().isIn(['activo', 'pendiente', 'por_vencer', 'Vencido']),
-    body('fecha_nacimiento').optional({ nullable: true }).isDate(),
-    body('fecha_vencimiento').optional().isDate(),
-    body('notas').optional().trim(),
-    body('fecha_inicio').optional().isDate(),
-    body('direccion').optional().trim(),
-    body('sexo').optional({ nullable: true }).isString(),
-    body('identification_number').optional({ nullable: true }).isString().trim()
-  ],
+  validateUUID('id'),
+  actualizarClienteValidator,
+  validateRequest,
   clienteController.actualizarCliente
 );
 
@@ -235,7 +225,11 @@ router.put('/:id',
  *       200:
  *         description: Cliente eliminado
  */
-router.delete('/:id', authenticateToken, clienteController.eliminarCliente);
+router.delete('/:id', 
+  authenticateToken, 
+  validateUUID('id'),
+  clienteController.eliminarCliente
+);
 
 /**
  * @swagger
@@ -263,6 +257,9 @@ router.delete('/:id', authenticateToken, clienteController.eliminarCliente);
  *               items:
  *                 $ref: '#/components/schemas/Cliente'
  */
-router.get('/categoria/:categoria', authenticateToken, clienteController.obtenerClientesPorCategoria);
+router.get('/categoria/:categoria', 
+  authenticateToken, 
+  clienteController.obtenerClientesPorCategoria
+);
 
 export default router; 

@@ -19,7 +19,14 @@ class NegocioConfig {
     // upsert: si existe actualiza, si no, crea
     const { data, error } = await supabase
       .from('negocio_config')
-      .upsert([{ ...datos, user_id }], { onConflict: ['user_id'] })
+      .upsert([{ 
+        ...datos, 
+        user_id,
+        logo_url: datos.logo_url || null,
+        color_personalizado: datos.color_personalizado || null,
+        nota_factura: datos.nota_factura || null,
+        terminos_condiciones: datos.terminos_condiciones || null
+      }], { onConflict: ['user_id'] })
       .select()
       .single();
     if (error) throw error;

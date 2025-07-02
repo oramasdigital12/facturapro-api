@@ -1,5 +1,6 @@
 import { validationResult } from 'express-validator';
 import Venta from '../models/Venta.js';
+import { getSupabaseForUser } from '../config/supabase.js';
 
 export const registrarVenta = async (req, res) => {
     try {
@@ -8,6 +9,7 @@ export const registrarVenta = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
+        const supabase = getSupabaseForUser(req.token);
         // Ignorar cualquier user_id enviado por el cliente
         const { cliente_id, tipo, monto, fecha } = req.body;
         const venta = await Venta.crear({
@@ -16,7 +18,7 @@ export const registrarVenta = async (req, res) => {
             monto,
             fecha,
             user_id: req.user.id
-        });
+        }, supabase);
 
         res.status(201).json(venta);
     } catch (error) {
@@ -30,7 +32,8 @@ export const registrarVenta = async (req, res) => {
 
 export const obtenerVentas = async (req, res) => {
     try {
-        const ventas = await Venta.obtenerTodas(req.user.id);
+        const supabase = getSupabaseForUser(req.token);
+        const ventas = await Venta.obtenerTodas(req.user.id, supabase);
         res.json(ventas);
     } catch (error) {
         console.error('Error al obtener ventas:', error);
@@ -43,7 +46,8 @@ export const obtenerVentas = async (req, res) => {
 
 export const obtenerVenta = async (req, res) => {
     try {
-        const venta = await Venta.obtenerPorId(req.params.id, req.user.id);
+        const supabase = getSupabaseForUser(req.token);
+        const venta = await Venta.obtenerPorId(req.params.id, req.user.id, supabase);
         if (!venta) {
             return res.status(404).json({ error: 'Venta no encontrada' });
         }
@@ -64,6 +68,7 @@ export const actualizarVenta = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
+        const supabase = getSupabaseForUser(req.token);
         // Ignorar cualquier user_id enviado por el cliente
         const { cliente_id, tipo, monto, fecha } = req.body;
         const datosActualizados = { };
@@ -72,7 +77,7 @@ export const actualizarVenta = async (req, res) => {
         if (monto !== undefined) datosActualizados.monto = monto;
         if (fecha !== undefined) datosActualizados.fecha = fecha;
 
-        const venta = await Venta.actualizar(req.params.id, datosActualizados, req.user.id);
+        const venta = await Venta.actualizar(req.params.id, datosActualizados, req.user.id, supabase);
         if (!venta) {
             return res.status(404).json({ error: 'Venta no encontrada' });
         }
@@ -88,7 +93,8 @@ export const actualizarVenta = async (req, res) => {
 
 export const eliminarVenta = async (req, res) => {
     try {
-        const eliminada = await Venta.eliminar(req.params.id, req.user.id);
+        const supabase = getSupabaseForUser(req.token);
+        const eliminada = await Venta.eliminar(req.params.id, req.user.id, supabase);
         if (!eliminada) {
             return res.status(404).json({ error: 'Venta no encontrada' });
         }
@@ -104,7 +110,8 @@ export const eliminarVenta = async (req, res) => {
 
 export const obtenerVentasCliente = async (req, res) => {
     try {
-        const ventas = await Venta.obtenerPorCliente(req.params.clienteId, req.user.id);
+        const supabase = getSupabaseForUser(req.token);
+        const ventas = await Venta.obtenerPorCliente(req.params.clienteId, req.user.id, supabase);
         res.json(ventas);
     } catch (error) {
         console.error('Error al obtener ventas del cliente:', error);
@@ -123,7 +130,8 @@ export const obtenerVentasPorFecha = async (req, res) => {
       return res.status(400).json({ error: 'Se requieren fechas de inicio y fin' });
     }
 
-    const ventas = await Venta.obtenerPorFecha(req.user.id, fechaInicio, fechaFin);
+    const supabase = getSupabaseForUser(req.token);
+    const ventas = await Venta.obtenerPorFecha(req.user.id, fechaInicio, fechaFin, supabase);
     res.json(ventas);
   } catch (error) {
     console.error('Error al obtener ventas por fecha:', error);
@@ -139,7 +147,8 @@ export const obtenerEstadisticas = async (req, res) => {
       return res.status(400).json({ error: 'Se requiere año y mes' });
     }
 
-    const estadisticas = await Venta.obtenerEstadisticasMensuales(req.user.id, parseInt(año), parseInt(mes));
+    const supabase = getSupabaseForUser(req.token);
+    const estadisticas = await Venta.obtenerEstadisticasMensuales(req.user.id, parseInt(año), parseInt(mes), supabase);
     res.json(estadisticas);
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
