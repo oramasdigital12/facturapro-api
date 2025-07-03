@@ -2,21 +2,21 @@ import rateLimit from "express-rate-limit";
 
 /**
  * Rate limiter para endpoints de autenticación
- * Limita a 5 intentos por 15 minutos
+ * Limita a 10 intentos por 5 minutos
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 intentos
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: 10, // máximo 10 intentos
   message: {
     error: "Demasiados intentos de login, intenta más tarde",
-    retryAfter: "15 minutos"
+    retryAfter: "5 minutos"
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiados intentos de login, intenta más tarde",
-      retryAfter: "15 minutos"
+      retryAfter: "5 minutos"
     });
   }
 });
