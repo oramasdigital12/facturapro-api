@@ -70,8 +70,8 @@ app.use(morgan('combined', {
 // Sanitización global de entrada
 app.use(sanitizeInput);
 
-// Rate limiting global
-app.use('/api', apiLimiter);
+// Rate limiting solo en rutas sensibles (no global para toda la API)
+// app.use('/api', apiLimiter); // <-- Eliminado para evitar bloqueos globales
 
 // Endpoints de health check (sin rate limiting)
 app.get('/health', healthCheck);
@@ -108,13 +108,13 @@ app.get('/', (req, res) => {
 
 // Rutas de la API con rate limiting específico
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/clientes', clienteRoutes);
-app.use('/api/mensajes', mensajeRoutes);
-app.use('/api/ventas', ventaRoutes);
-app.use('/api/negocio-config', negocioConfigRoutes);
-app.use('/api/tareas', tareaRoutes);
-app.use('/api/categorias-negocio', categoriaNegocioRoutes);
-app.use('/api/servicios-negocio', servicioNegocioRoutes);
+app.use('/api/clientes', apiLimiter, clienteRoutes); // Limita solo creación/actualización masiva
+app.use('/api/mensajes', apiLimiter, mensajeRoutes);
+app.use('/api/ventas', apiLimiter, ventaRoutes);
+app.use('/api/negocio-config', apiLimiter, negocioConfigRoutes);
+app.use('/api/tareas', apiLimiter, tareaRoutes);
+app.use('/api/categorias-negocio', apiLimiter, categoriaNegocioRoutes);
+app.use('/api/servicios-negocio', apiLimiter, servicioNegocioRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
