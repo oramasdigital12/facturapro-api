@@ -23,6 +23,8 @@ import negocioConfigRoutes from './routes/negocioConfigRoutes.js';
 import tareaRoutes from './routes/tareaRoutes.js';
 import categoriaNegocioRoutes from './routes/categoriaNegocioRoutes.js';
 import servicioNegocioRoutes from './routes/servicioNegocioRoutes.js';
+import facturaRoutes from './routes/facturaRoutes.js';
+import facturaPublicaRoutes from './routes/facturaPublicaRoutes.js';
 
 const app = express();
 
@@ -111,10 +113,14 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/clientes', apiLimiter, clienteRoutes); // Limita solo creación/actualización masiva
 app.use('/api/mensajes', apiLimiter, mensajeRoutes);
 app.use('/api/ventas', apiLimiter, ventaRoutes);
+app.use('/api/facturas', apiLimiter, facturaRoutes);
 app.use('/api/negocio-config', apiLimiter, negocioConfigRoutes);
 app.use('/api/tareas', apiLimiter, tareaRoutes);
 app.use('/api/categorias-negocio', apiLimiter, categoriaNegocioRoutes);
 app.use('/api/servicios-negocio', apiLimiter, servicioNegocioRoutes);
+
+// Rutas públicas (sin autenticación)
+app.use('/factura', facturaPublicaRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -224,6 +230,8 @@ app.listen(PORT, () => {
   console.log('   POST   /api/clientes');
   console.log('   POST   /api/mensajes');
   console.log('   POST   /api/ventas');
+  console.log('   POST   /api/facturas');
+  console.log('   GET    /factura/{uuid}');
   console.log('   POST   /api/negocio-config');
   console.log('   POST   /api/tareas');
   console.log('   POST   /api/categorias-negocio');
