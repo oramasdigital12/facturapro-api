@@ -2,6 +2,13 @@ import express from 'express';
 import * as facturaController from '../controllers/facturaController.js';
 import { validateUUID } from '../middlewares/validation.js';
 import { searchLimiter } from '../middlewares/rateLimiter.js';
+import { createClient } from '@supabase/supabase-js';
+import Factura from '../models/Factura.js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+const BUCKET = 'facturas';
 
 const router = express.Router();
 
@@ -113,5 +120,26 @@ router.get('/:uuid',
   validateUUID('uuid'),
   facturaController.obtenerFacturaPublica
 );
+
+// Endpoint público para servir el PDF de la factura
+router.get('/:uuid/pdf', async (req, res) => {
+  try {
+    // Buscar la factura por UUID
+    const factura = await Factura.obtenerPorUuidPublico(req.params.uuid, supabase);
+    if (!factura) {
+      return res.status(404).json({ error: 'Factura no encontrada' });
+    }
+    // Construir la ruta del PDF en storage
+    const filePath = `${factura.user_id}/${factura.id}.pdf`;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+    if (!data || !data.publicUrl) {
+      return res.status(404).json({ error: 'PDF no encontrado' });
+    }
+    // Redirigir al PDF público
+    return res.redirect(data.publicUrl);
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al obtener PDF', details: error.message });
+  }
+});
 
 export default router; 

@@ -1,10 +1,12 @@
 import { supabase } from '../config/supabase.js';
 
-const validarDatosFactura = (datos) => {
+const validarDatosFactura = (datos, esActualizacion = false) => {
   const errores = [];
-  
-  if (!datos.cliente_id || typeof datos.cliente_id !== 'string') {
-    errores.push('El cliente_id es requerido');
+  // Solo obligatorio al crear, o si se envía en actualización
+  if (!esActualizacion || datos.cliente_id !== undefined) {
+    if (!datos.cliente_id || typeof datos.cliente_id !== 'string') {
+      errores.push('El cliente_id es requerido');
+    }
   }
   
   if (datos.estado && !['pendiente', 'pagada', 'borrador'].includes(datos.estado)) {
@@ -88,7 +90,7 @@ class Factura {
     try {
       const { data, error } = await supabase
         .from('negocio_config')
-        .select('logo_personalizado_url, firma_url, terminos, nota')
+        .select('logo_url, firma_url, terminos_condiciones, nota_factura, nombre_negocio, email, telefono')
         .eq('user_id', userId)
         .single();
 
@@ -127,10 +129,10 @@ class Factura {
         numero_factura: numeroFactura,
         fecha_factura: datos.fecha_factura || new Date().toISOString().split('T')[0],
         estado: datos.estado || 'pendiente',
-        logo_personalizado_url: datos.logo_personalizado_url || configNegocio.logo_personalizado_url,
+        logo_personalizado_url: datos.logo_personalizado_url || configNegocio.logo_url,
         firma_url: datos.firma_url || configNegocio.firma_url,
-        terminos: datos.terminos || configNegocio.terminos,
-        nota: datos.nota || configNegocio.nota
+        terminos: datos.terminos || configNegocio.terminos_condiciones,
+        nota: datos.nota || configNegocio.nota_factura
       };
 
       // Crear la factura
@@ -245,7 +247,7 @@ class Factura {
 
   static async actualizar(id, datos, items, userId, supabase) {
     try {
-      const errores = validarDatosFactura(datos);
+      const errores = validarDatosFactura(datos, true);
       if (errores.length > 0) {
         throw new Error('Errores de validación: ' + errores.join(', '));
       }

@@ -31,6 +31,7 @@
   "author": "VendedorPro Team",
   "license": "ISC",
   "dependencies": {
+    "@supabase/storage-js": "^2.10.1",
     "@supabase/supabase-js": "^2.39.4",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -42,6 +43,7 @@
     "helmet": "^7.1.0",
     "joi": "^17.12.2",
     "morgan": "^1.10.0",
+    "puppeteer": "^24.12.1",
     "stripe": "^14.21.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

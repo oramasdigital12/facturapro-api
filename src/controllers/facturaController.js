@@ -1,6 +1,13 @@
 import { validationResult } from 'express-validator';
 import Factura from '../models/Factura.js';
 import { getSupabaseForUser } from '../config/supabase.js';
+import { generarYSubirPdfFactura } from '../services/pdfFacturaService.js';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseStorage = createClient(supabaseUrl, supabaseKey);
+const BUCKET = 'facturas';
 
 export const crearFactura = async (req, res) => {
     try {
@@ -27,7 +34,8 @@ export const crearFactura = async (req, res) => {
             items 
         } = req.body;
 
-        const factura = await Factura.crear({
+        // Crear la factura (sin join de cliente)
+        const facturaCreada = await Factura.crear({
             cliente_id,
             fecha_factura,
             estado,
@@ -43,7 +51,18 @@ export const crearFactura = async (req, res) => {
             user_id: req.user.id
         }, items, supabase);
 
-        res.status(201).json(factura);
+        // Obtener la factura completa (con join de cliente)
+        const factura = await Factura.obtenerPorId(facturaCreada.id, req.user.id, supabase);
+        const cliente = factura.cliente || null;
+        const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
+        // Generar y subir PDF
+        let pdfUrl = null;
+        try {
+          pdfUrl = await generarYSubirPdfFactura({ factura, cliente, negocio }, req.user.id);
+        } catch (err) {
+          console.error('Error al generar/subir PDF:', err);
+        }
+        res.status(201).json({ ...factura, pdfUrl });
     } catch (error) {
         console.error('Error al crear factura:', error);
         res.status(500).json({
@@ -65,7 +84,19 @@ export const obtenerFacturas = async (req, res) => {
         if (req.query.fecha_fin) filtros.fecha_fin = req.query.fecha_fin;
 
         const facturas = await Factura.obtenerTodas(req.user.id, filtros, supabase);
-        res.json(facturas);
+
+        // Agregar pdfUrl a cada factura
+        const facturasConPdf = facturas.map(factura => {
+            let pdfUrl = null;
+            if (factura.user_id && factura.id) {
+                const filePath = `${factura.user_id}/${factura.id}.pdf`;
+                const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+                pdfUrl = data?.publicUrl || null;
+            }
+            return { ...factura, pdfUrl };
+        });
+
+        res.json(facturasConPdf);
     } catch (error) {
         console.error('Error al obtener facturas:', error);
         res.status(500).json({
@@ -83,8 +114,14 @@ export const obtenerFactura = async (req, res) => {
         if (!factura) {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
-        
-        res.json(factura);
+        // Calcular pdfUrl
+        let pdfUrl = null;
+        if (factura.user_id && factura.id) {
+          const filePath = `${factura.user_id}/${factura.id}.pdf`;
+          const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+          pdfUrl = data?.publicUrl || null;
+        }
+        res.json({ ...factura, pdfUrl });
     } catch (error) {
         console.error('Error al obtener factura:', error);
         res.status(500).json({
@@ -144,7 +181,17 @@ export const actualizarFactura = async (req, res) => {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
 
-        res.json(factura);
+        // Obtener datos de cliente y negocio para el PDF
+        const cliente = factura.cliente || null;
+        const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
+        // Generar y subir PDF
+        let pdfUrl = null;
+        try {
+          pdfUrl = await generarYSubirPdfFactura({ factura, cliente, negocio }, req.user.id);
+        } catch (err) {
+          console.error('Error al generar/subir PDF:', err);
+        }
+        res.json({ ...factura, pdfUrl });
     } catch (error) {
         console.error('Error al actualizar factura:', error);
         res.status(500).json({
@@ -181,7 +228,13 @@ export const obtenerFacturaPublica = async (req, res) => {
         if (!factura) {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
-        
+        // Calcular pdfUrl
+        let pdfUrl = null;
+        if (factura.user_id && factura.id) {
+          const filePath = `${factura.user_id}/${factura.id}.pdf`;
+          const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+          pdfUrl = data?.publicUrl || null;
+        }
         // Formatear la respuesta para la vista pública
         const facturaFormateada = {
             id: factura.id,
@@ -200,7 +253,8 @@ export const obtenerFacturaPublica = async (req, res) => {
             firma_url: factura.firma_url,
             cliente: factura.cliente,
             items: factura.items,
-            created_at: factura.created_at
+            created_at: factura.created_at,
+            pdfUrl
         };
         
         res.json(facturaFormateada);
