@@ -209,7 +209,17 @@ export const eliminarFactura = async (req, res) => {
         if (!eliminado) {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
-        
+        // Eliminar el PDF del storage
+        try {
+            const filePath = `${req.user.id}/${req.params.id}.pdf`;
+            const { error: storageError } = await supabaseStorage.storage.from(BUCKET).remove([filePath]);
+            if (storageError) {
+                console.error('Error al eliminar PDF en storage:', storageError);
+                // No detenemos la respuesta si falla el borrado del PDF
+            }
+        } catch (err) {
+            console.error('Error inesperado al intentar eliminar PDF:', err);
+        }
         res.json({ message: 'Factura eliminada exitosamente' });
     } catch (error) {
         console.error('Error al eliminar factura:', error);

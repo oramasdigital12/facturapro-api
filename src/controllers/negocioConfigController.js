@@ -48,24 +48,27 @@ export const subirLogoNegocio = async (req, res) => {
       contentType = file.mimetype;
     }
     // Segmentar por usuario y usar nombre único
-    const uniqueFilePath = `logos/${req.user.id}/logo_${Date.now()}.${ext}`;
+    const uniqueFilePath = `${req.user.id}/logo_${Date.now()}.${ext}`;
     const fileBuffer = await fs.readFile(file.filepath);
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    // Buscar y eliminar logo anterior si existe
-    // Obtener la config actual del usuario
-    const { data: config, error: configError } = await supabase
-      .from('negocio_config')
-      .select('logo_url')
-      .eq('user_id', req.user.id)
-      .single();
-    if (config && config.logo_url) {
-      // Extraer el path relativo del archivo anterior desde la URL pública
-      const match = config.logo_url.match(/\/logos\/(.+)$/);
-      if (match && match[1]) {
-        const oldPath = `logos/${match[1]}`;
-        await supabase.storage.from('logos').remove([oldPath]);
+    // Eliminar todos los archivos de logo anteriores del usuario antes de subir el nuevo logo
+    try {
+      const { data: listData, error: listError } = await supabase.storage.from('logos').list(`${req.user.id}/`, { limit: 100 });
+      if (listError) {
+        console.error('Error al listar archivos en storage:', listError);
       }
+      if (Array.isArray(listData) && listData.length > 0) {
+        const filesToDelete = listData.map(f => `${req.user.id}/${f.name}`);
+        if (filesToDelete.length > 0) {
+          const { error: removeError } = await supabase.storage.from('logos').remove(filesToDelete);
+          if (removeError) {
+            console.error('Error al eliminar archivos en storage:', removeError);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error al limpiar logos anteriores:', err);
     }
 
     // Subir el nuevo logo
