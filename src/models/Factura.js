@@ -90,7 +90,7 @@ class Factura {
     try {
       const { data, error } = await supabase
         .from('negocio_config')
-        .select('logo_url, firma_url, terminos_condiciones, nota_factura, nombre_negocio, email, telefono')
+        .select('logo_url, firma_url, terminos_condiciones, nota_factura, nombre_negocio, email, telefono, direccion, color_personalizado')
         .eq('user_id', userId)
         .single();
 

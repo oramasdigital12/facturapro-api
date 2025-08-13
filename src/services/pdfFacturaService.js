@@ -11,185 +11,393 @@ const BUCKET = 'facturas';
 
 function facturaHtmlTemplate(factura, cliente, negocio) {
   // Determinar estado
-  const estado = factura.estado === 'pagada' ? 'PAGADO' : 'pendiente';
+  const estado = factura.estado === 'pagada' ? 'PAID' : 'PENDING';
   const colorEstado = factura.estado === 'pagada' ? '#4CAF50' : '#F7E7A6';
   const colorTextoEstado = factura.estado === 'pagada' ? '#218838' : '#8a6d3b';
   const colorFondoEstado = factura.estado === 'pagada' ? '#e6f9ec' : '#fdf6d7';
+  
+  // Usar color personalizado del negocio o azul oscuro por defecto
+  const colorNegocio = negocio?.color_personalizado || '#1e3a8a';
+  
   return `
   <html>
     <head>
       <meta charset="utf-8" />
-      <title>Factura #${factura.numero_factura}</title>
+      <title>Invoice #${factura.numero_factura}</title>
       <style>
+        @page {
+          size: A4;
+          margin: 0;
+        }
+        
         body {
           font-family: 'Segoe UI', Arial, sans-serif;
           background: #fff;
           color: #222;
           margin: 0;
           padding: 0;
+          line-height: 1.4;
         }
-        .factura-preview {
-          max-width: 900px;
+        
+        .invoice-container {
+          max-width: 800px;
           margin: 0 auto;
-          padding: 32px 40px 40px 40px;
-          position: relative;
+          background: #fff;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
         }
+        
+        /* Header Section */
         .header {
+          background: ${colorNegocio};
+          color: white;
+          padding: 30px;
           display: flex;
+          justify-content: space-between;
           align-items: flex-start;
-          justify-content: space-between;
         }
+        
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .logo-placeholder {
+          width: 80px;
+          height: 80px;
+          background: rgba(255,255,255,0.2);
+          border: 2px dashed rgba(255,255,255,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          color: rgba(255,255,255,0.7);
+          text-align: center;
+        }
+        
         .logo {
-          width: 90px;
-          height: 90px;
+          width: 80px;
+          height: 80px;
           object-fit: contain;
-          border-radius: 12px;
-          background: #f5f5f5;
+          border-radius: 8px;
+          background: white;
         }
-        .negocio-info {
-          text-align: right;
-          flex: 1;
-          margin-left: 24px;
-        }
-        .nombre-negocio {
-          font-size: 2rem;
+        
+        .invoice-title {
+          font-size: 2.5rem;
           font-weight: bold;
-          margin-bottom: 4px;
+          margin: 0;
         }
-        .negocio-contacto {
-          margin-top: 2px;
-          font-size: 1.05rem;
+        
+        .business-info {
+          text-align: right;
         }
-        .datos-principales {
-          margin: 32px 0 16px 0;
+        
+        .business-name {
+          font-size: 1.3rem;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+        
+        .business-details {
+          font-size: 0.95rem;
+          line-height: 1.3;
+        }
+        
+        /* Main Content */
+        .main-content {
+          padding: 30px;
+          flex: 1;
+        }
+        
+        .invoice-details-section {
           display: flex;
           justify-content: space-between;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #e0e0e0;
         }
-        .datos-principales .izq {
-          font-size: 1.1rem;
-          min-width: 320px;
+        
+        .invoice-details {
+          flex: 1;
         }
-        .datos-principales .der {
-          font-size: 1.1rem;
+        
+        .bill-to {
+          flex: 1;
           text-align: right;
         }
-        .cliente-info {
-          margin-bottom: 16px;
-        }
-        .cliente-info .label {
+        
+        .section-title {
           font-weight: bold;
+          font-size: 1.1rem;
+          margin-bottom: 10px;
+          color: ${colorNegocio};
         }
-        .cliente-info .valor {
-          margin-left: 4px;
+        
+        .detail-row {
+          margin-bottom: 5px;
+          font-size: 0.95rem;
         }
-        .tabla-items {
+        
+        .detail-label {
+          font-weight: bold;
+          color: #666;
+        }
+        
+        /* Items Table */
+        .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 24px;
+          margin-bottom: 30px;
         }
-        .tabla-items th {
-          background: #fafbfc;
-          font-weight: bold;
-          padding: 10px 8px;
-          border-bottom: 2px solid #eaeaea;
+        
+        .items-table th {
+          background: #f8f9fa;
+          padding: 12px 8px;
           text-align: left;
+          font-weight: bold;
+          color: ${colorNegocio};
+          border-bottom: 2px solid #e0e0e0;
         }
-        .tabla-items td {
-          padding: 8px 8px;
+        
+        .items-table td {
+          padding: 12px 8px;
           border-bottom: 1px solid #f0f0f0;
         }
-        .totales {
-          margin-top: 16px;
-          float: right;
+        
+        .items-table tr:nth-child(even) {
+          background: #fafafa;
+        }
+        
+        /* Bottom Section */
+        .bottom-section {
+          display: flex;
+          justify-content: space-between;
+          gap: 40px;
+        }
+        
+        .terms-section {
+          flex: 1;
+        }
+        
+        .terms-content {
+          text-align: justify;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          line-height: 1.5;
+          font-size: 0.9rem;
+          color: #555;
+        }
+        
+        .totals-section {
+          flex: 0 0 200px;
           text-align: right;
         }
-        .totales div {
-          margin-bottom: 2px;
+        
+        .total-row {
+          margin-bottom: 8px;
+          font-size: 0.95rem;
         }
-        .totales .total {
-          color: #1976d2;
+        
+        .total-row.total {
+          font-size: 1.1rem;
           font-weight: bold;
-          font-size: 1.15rem;
+          color: ${colorNegocio};
+          border-top: 2px solid #e0e0e0;
+          padding-top: 8px;
+          margin-top: 8px;
         }
-        .nota, .terminos {
-          margin-top: 32px;
-          font-size: 1.05rem;
+        
+        .total-label {
+          display: inline-block;
+          width: 80px;
+          text-align: left;
         }
-        .nota b, .terminos b {
-          font-weight: bold;
+        
+        .total-value {
+          display: inline-block;
+          width: 80px;
+          text-align: right;
         }
-        .estado-badge {
-          position: absolute;
-          right: 40px;
-          bottom: 32px;
+        
+        /* Status Badge */
+        .status-badge {
+          margin-top: 20px;
           background: ${colorFondoEstado};
           color: ${colorTextoEstado};
           font-weight: bold;
-          font-size: 1.4rem;
-          border-radius: 16px;
-          padding: 10px 32px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-          transform: rotate(-8deg);
+          font-size: 1.2rem;
+          padding: 12px 24px;
+          border-radius: 25px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          text-align: center;
+          display: inline-block;
+        }
+        
+        /* Footer */
+        .footer {
+          background: ${colorNegocio};
+          color: white;
+          padding: 15px 30px;
+          text-align: center;
+          font-size: 0.9rem;
+          margin-top: auto;
+        }
+        
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          object-fit: contain;
+          border-radius: 50%;
+          background: white;
+          padding: 2px;
+        }
+        
+        /* Page Break */
+        .page-break {
+          page-break-before: always;
+        }
+        
+        /* Ensure footer stays at bottom */
+        .invoice-container {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .main-content {
+          flex: 1;
         }
       </style>
     </head>
     <body>
-      <div class="factura-preview">
+      <div class="invoice-container">
+        <!-- Header -->
         <div class="header">
-          <img src="${factura.logo_personalizado_url || ''}" class="logo" />
-          <div class="negocio-info">
-            <div class="nombre-negocio">${factura.nombre_negocio || negocio?.nombre_negocio || ''}</div>
-            <div class="negocio-contacto">${factura.direccion || negocio?.direccion || ''}</div>
-            <div class="negocio-contacto">${factura.email || negocio?.email || ''}</div>
-            <div class="negocio-contacto">${negocio?.telefono || ''}</div>
+          <div class="header-left">
+            ${factura.logo_personalizado_url || negocio?.logo_url ? 
+              `<img src="${factura.logo_personalizado_url || negocio.logo_url}" class="logo" alt="Logo" />` : 
+              `<div class="logo-placeholder">Your Company<br>Logo</div>`
+            }
+            <h1 class="invoice-title">INVOICE</h1>
           </div>
-        </div>
-        <div class="datos-principales">
-          <div class="izq">
-            <div><b>Factura #${factura.numero_factura}</b></div>
-            <div class="cliente-info" style="margin-top:10px;">
-              <div><span class="label">Cliente:</span><span class="valor">${cliente?.nombre || ''}</span></div>
-              <div><span class="valor">${cliente?.email || ''}</span></div>
-              <div><span class="valor">${cliente?.telefono || ''}</span></div>
+          <div class="business-info">
+            <div class="business-name">${factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name'}</div>
+            <div class="business-details">
+              ${negocio?.direccion || ''}<br>
+              ${negocio?.telefono || ''}<br>
+              ${factura.email || negocio?.email || ''}
             </div>
           </div>
-          <div class="der">
-            <div>Fecha: ${factura.fecha_factura || ''}</div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+          <!-- Invoice Details Section -->
+          <div class="invoice-details-section">
+            <div class="invoice-details">
+              <div class="section-title">INVOICE DETAILS:</div>
+              <div class="detail-row">
+                <span class="detail-label">Invoice #:</span> ${factura.numero_factura || '0000'}
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date of Issue:</span> ${factura.fecha_factura || 'MM/DD/YYYY'}
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Due Date:</span> ${factura.fecha_vencimiento || 'MM/DD/YYYY'}
+              </div>
+            </div>
+            <div class="bill-to">
+              <div class="section-title">BILL TO:</div>
+              <div class="detail-row">${cliente?.nombre || 'CUSTOMER NAME'}</div>
+              <div class="detail-row">${cliente?.direccion || ''}</div>
+              <div class="detail-row">${cliente?.email || ''}</div>
+              <div class="detail-row">${cliente?.telefono || ''}</div>
+            </div>
+          </div>
+          
+          <!-- Items Table -->
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>ITEM/SERVICE</th>
+                <th>DESCRIPTION</th>
+                <th>QTY/HRS</th>
+                <th>RATE</th>
+                <th>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${factura.items && factura.items.length > 0 ? factura.items.map(item => `
+                <tr>
+                  <td>${item.categoria || 'Service'}</td>
+                  <td>${item.descripcion || 'Description'}</td>
+                  <td>${item.cantidad || '1'}</td>
+                  <td>$${Number(item.precio_unitario || 0).toFixed(2)}</td>
+                  <td>$${Number(item.total || 0).toFixed(2)}</td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td>Placeholder</td>
+                  <td>Text</td>
+                  <td>000</td>
+                  <td>000</td>
+                  <td>000</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+          
+          <!-- Bottom Section -->
+          <div class="bottom-section">
+            <div class="terms-section">
+              <div class="section-title">TERMS</div>
+              <div class="terms-content">${factura.terminos || negocio?.terminos_condiciones || 'Text Here'}</div>
+              
+              <div class="section-title" style="margin-top: 20px;">CONDITIONS/INSTRUCTIONS</div>
+              <div class="terms-content">${factura.nota || negocio?.nota_factura || 'Text Here'}</div>
+            </div>
+            
+            <div class="totals-section">
+              <div class="total-row">
+                <span class="total-label">Subtotal:</span>
+                <span class="total-value">$${Number(factura.subtotal || 0).toFixed(2)}</span>
+              </div>
+              <div class="total-row">
+                <span class="total-label">Tax:</span>
+                <span class="total-value">$${Number(factura.impuesto || 0).toFixed(2)}</span>
+              </div>
+              <div class="total-row total">
+                <span class="total-label">TOTAL:</span>
+                <span class="total-value">$${Number(factura.total || 0).toFixed(2)}</span>
+              </div>
+              <div class="total-row">
+                <span class="total-label">Deposit:</span>
+                <span class="total-value">$${Number(factura.deposito || 0).toFixed(2)}</span>
+              </div>
+              <div class="total-row total">
+                <span class="total-label">BALANCE:</span>
+                <span class="total-value">$${Number(factura.balance_restante || 0).toFixed(2)}</span>
+              </div>
+              
+              <!-- Status Badge - Más grande y debajo del BALANCE -->
+              ${estado ? `<div class="status-badge">${estado}</div>` : ''}
+            </div>
           </div>
         </div>
-        <table class="tabla-items">
-          <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Categoría</th>
-              <th>Precio Unitario</th>
-              <th>Cantidad</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${factura.items && factura.items.length > 0 ? factura.items.map(item => `
-              <tr>
-                <td>${item.descripcion || ''}</td>
-                <td>${item.categoria || ''}</td>
-                <td>$${Number(item.precio_unitario).toFixed(2)}</td>
-                <td>${item.cantidad}</td>
-                <td>$${Number(item.total).toFixed(2)}</td>
-              </tr>
-            `).join('') : `<tr><td colspan="5" style="text-align:center;color:#aaa;">Sin items</td></tr>`}
-          </tbody>
-        </table>
-        <div class="totales">
-          <div>Subtotal: <b>$${Number(factura.subtotal || 0).toFixed(2)}</b></div>
-          <div>Impuesto: <b>$${Number(factura.impuesto || 0).toFixed(2)}</b></div>
-          <div class="total">Total: <b>$${Number(factura.total || 0).toFixed(2)}</b></div>
-          <div>Depósito: <b>$${Number(factura.deposito || 0).toFixed(2)}</b></div>
-          <div>Balance: <b>$${Number(factura.balance_restante || 0).toFixed(2)}</b></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${factura.logo_personalizado_url || negocio?.logo_url ? 
+              `<img src="${factura.logo_personalizado_url || negocio.logo_url}" class="footer-logo" alt="Logo" />` : 
+              `<div style="width: 20px; height: 20px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: ${colorNegocio}; font-size: 12px;">F</div>`
+            }
+            <span>${factura.nombre_negocio || negocio?.nombre_negocio || 'FreshBooks'}</span>
+          </div>
         </div>
-        <div style="clear:both"></div>
-        <div class="nota"><b>Nota:</b> ${factura.nota || ''}</div>
-        <div class="terminos"><b>Términos:</b> ${factura.terminos || ''}</div>
-        ${estado ? `<div class="estado-badge">${estado}</div>` : ''}
       </div>
     </body>
   </html>
@@ -201,7 +409,16 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
   const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'networkidle0' });
-  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+  const pdfBuffer = await page.pdf({ 
+    format: 'A4', 
+    printBackground: true,
+    margin: {
+      top: '0',
+      right: '0',
+      bottom: '0',
+      left: '0'
+    }
+  });
   await browser.close();
 
   const filePath = `${userId}/${factura.id}.pdf`;
