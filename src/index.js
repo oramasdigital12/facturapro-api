@@ -25,6 +25,7 @@ import categoriaNegocioRoutes from './routes/categoriaNegocioRoutes.js';
 import servicioNegocioRoutes from './routes/servicioNegocioRoutes.js';
 import facturaRoutes from './routes/facturaRoutes.js';
 import facturaPublicaRoutes from './routes/facturaPublicaRoutes.js';
+import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
 
 const app = express();
 
@@ -118,6 +119,7 @@ app.use('/api/negocio-config', apiLimiter, negocioConfigRoutes);
 app.use('/api/tareas', apiLimiter, tareaRoutes);
 app.use('/api/categorias-negocio', apiLimiter, categoriaNegocioRoutes);
 app.use('/api/servicios-negocio', apiLimiter, servicioNegocioRoutes);
+app.use('/api/metodos-pago', apiLimiter, metodoPagoRoutes);
 
 // Rutas públicas (sin autenticación)
 app.use('/factura', facturaPublicaRoutes);
@@ -236,4 +238,9 @@ app.listen(PORT, () => {
   console.log('   POST   /api/tareas');
   console.log('   POST   /api/categorias-negocio');
   console.log('   POST   /api/servicios-negocio');
+  console.log('   POST   /api/metodos-pago');
+  console.log('   GET    /api/metodos-pago');
+  console.log('   PUT    /api/metodos-pago/{id}');
+  console.log('   DELETE /api/metodos-pago/{id}');
+  console.log('   POST   /api/metodos-pago/orden');
 }); 

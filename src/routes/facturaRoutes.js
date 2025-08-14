@@ -63,6 +63,10 @@ const router = express.Router();
  *           type: string
  *           format: date
  *           description: Fecha de la factura
+ *         fecha_vencimiento:
+ *           type: string
+ *           format: date
+ *           description: Fecha de vencimiento de la factura
  *         fecha_pagada:
  *           type: string
  *           format: date
@@ -98,6 +102,15 @@ const router = express.Router();
  *         firma_url:
  *           type: string
  *           description: URL de la firma (opcional)
+ *         metodo_pago_id:
+ *           type: string
+ *           description: ID del método de pago seleccionado
+ *         metodo_pago:
+ *           $ref: '#/components/schemas/MetodoPago'
+ *           description: Información del método de pago seleccionado
+ *         cliente:
+ *           $ref: '#/components/schemas/Cliente'
+ *           description: Información del cliente
  *         items:
  *           type: array
  *           items:
@@ -111,6 +124,47 @@ const router = express.Router();
  *           type: string
  *           format: date-time
  *           description: Fecha de última actualización
+ *     
+ *     MetodoPago:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: ID del método de pago
+ *         nombre:
+ *           type: string
+ *           description: Nombre del método de pago
+ *         link:
+ *           type: string
+ *           description: URL del método de pago (opcional)
+ *         descripcion:
+ *           type: string
+ *           description: Descripción o pasos del método de pago
+ *         activo:
+ *           type: boolean
+ *           description: Si el método está activo
+ *         orden:
+ *           type: integer
+ *           description: Orden de visualización
+ *     
+ *     Cliente:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: ID del cliente
+ *         nombre:
+ *           type: string
+ *           description: Nombre del cliente
+ *         email:
+ *           type: string
+ *           description: Email del cliente
+ *         telefono:
+ *           type: string
+ *           description: Teléfono del cliente
+ *         direccion:
+ *           type: string
+ *           description: Dirección del cliente
  */
 
 /**
@@ -138,6 +192,10 @@ const router = express.Router();
  *                 type: string
  *                 format: date
  *                 description: Fecha de la factura (opcional, usa fecha actual por defecto)
+ *               fecha_vencimiento:
+ *                 type: string
+ *                 format: date
+ *                 description: Fecha de vencimiento de la factura (opcional)
  *               estado:
  *                 type: string
  *                 enum: [pendiente, pagada, borrador]
@@ -169,6 +227,9 @@ const router = express.Router();
  *               firma_url:
  *                 type: string
  *                 description: URL de la firma (opcional)
+ *               metodo_pago_id:
+ *                 type: string
+ *                 description: ID del método de pago seleccionado (opcional)
  *               items:
  *                 type: array
  *                 items:
@@ -298,6 +359,10 @@ router.get('/:id',
  *                 type: string
  *                 format: date
  *                 description: Fecha de la factura
+ *               fecha_vencimiento:
+ *                 type: string
+ *                 format: date
+ *                 description: Fecha de vencimiento de la factura (opcional)
  *               estado:
  *                 type: string
  *                 enum: [pendiente, pagada, borrador]
@@ -329,6 +394,9 @@ router.get('/:id',
  *               firma_url:
  *                 type: string
  *                 description: URL de la firma (opcional)
+ *               metodo_pago_id:
+ *                 type: string
+ *                 description: ID del método de pago seleccionado (opcional)
  *               items:
  *                 type: array
  *                 items:

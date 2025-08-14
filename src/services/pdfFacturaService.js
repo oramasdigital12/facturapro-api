@@ -9,6 +9,15 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const BUCKET = 'facturas';
 
+// Función auxiliar para generar nombre de archivo descriptivo
+function generarNombreArchivo(factura, cliente, negocio) {
+  const nombreNegocio = (negocio?.nombre_negocio || 'Negocio').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const nombreCliente = (cliente?.nombre || 'Cliente').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const numeroFactura = factura.numero_factura || '000';
+  
+  return `${nombreNegocio}-${nombreCliente}-${numeroFactura}.pdf`;
+}
+
 function facturaHtmlTemplate(factura, cliente, negocio) {
   // Determinar estado
   const estado = factura.estado === 'pagada' ? 'PAID' : 'PENDING';
@@ -421,7 +430,10 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
   });
   await browser.close();
 
-  const filePath = `${userId}/${factura.id}.pdf`;
+  // Crear nombre de archivo descriptivo
+  const fileName = generarNombreArchivo(factura, cliente, negocio);
+  const filePath = `${userId}/${fileName}`;
+  
   const { error } = await supabase.storage.from(BUCKET).upload(filePath, pdfBuffer, {
     contentType: 'application/pdf',
     upsert: true
@@ -430,4 +442,7 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
-} 
+}
+
+// Exportar función auxiliar para uso en otros archivos
+export { generarNombreArchivo }; 

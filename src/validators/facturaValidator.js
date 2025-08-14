@@ -10,6 +10,11 @@ export const crearFacturaValidator = [
     .isISO8601()
     .withMessage('La fecha_factura debe ser una fecha válida'),
   
+  body('fecha_vencimiento')
+    .optional()
+    .isISO8601()
+    .withMessage('La fecha_vencimiento debe ser una fecha válida'),
+  
   body('estado')
     .optional()
     .isIn(['pendiente', 'pagada', 'borrador'])
@@ -63,6 +68,11 @@ export const crearFacturaValidator = [
     .optional()
     .isURL()
     .withMessage('La firma_url debe ser una URL válida'),
+  
+  body('metodo_pago_id')
+    .optional()
+    .isUUID()
+    .withMessage('El metodo_pago_id debe ser un UUID válido'),
   
   body('items')
     .isArray({ min: 1 })
@@ -109,6 +119,11 @@ export const actualizarFacturaValidator = [
     .isISO8601()
     .withMessage('La fecha_factura debe ser una fecha válida'),
   
+  body('fecha_vencimiento')
+    .optional()
+    .isISO8601()
+    .withMessage('La fecha_vencimiento debe ser una fecha válida'),
+  
   body('estado')
     .optional()
     .isIn(['pendiente', 'pagada', 'borrador'])
@@ -162,6 +177,11 @@ export const actualizarFacturaValidator = [
     .optional()
     .isURL()
     .withMessage('La firma_url debe ser una URL válida'),
+  
+  body('metodo_pago_id')
+    .optional()
+    .isUUID()
+    .withMessage('El metodo_pago_id debe ser un UUID válido'),
   
   body('items')
     .optional()

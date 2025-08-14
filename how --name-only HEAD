@@ -1,0 +1,10 @@
+[33m8145600[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: Mejorar diseño de facturas PDF - Badge PENDING más grande y debajo del BALANCE - Footer siempre al final de la última página - Logo del negocio en el footer - Manejo correcto de paginado - Dirección del cliente agregada
+[33mf6b0ed2[m Fix: limpieza de logs y mejora definitiva en la gestión de logos por usuario en Supabase Storage
+[33m5b2a795[m Fix: mostrar correctamente la información del cliente y teléfono del negocio en el PDF de factura. Mejoras en generación y visualización de PDF.
+[33m1a248ad[m  Módulo completo de facturación para VendedorPro - Incluye CRUD completo, enlaces públicos para WhatsApp, auto-incremento de números, validaciones y documentación completa
+[33m2656602[m Rate limiting solo en rutas sensibles, eliminado global para evitar bloqueos injustificados
+[33mc11c83f[m Ajuste seguro de rate limiting: límites aumentados y aplicado solo a rutas sensibles
+[33md9e250c[m fix: rate limiter solo en /api/auth/login y límite aumentado para evitar bloqueos accidentales. Mejor práctica de seguridad.
+[33mb4723bb[m feat: subida de logos segmentada por usuario, eliminación automática del logo anterior y actualización de logo_url en negocio_config. Endpoints CRUD para categorías y servicios de negocio, mejoras en Swagger y validaciones.
+[33m30ccfc2[m fix: Ajuste en el manejo de campos nulos en el modelo de clientes
+[33m52bc5ef[m fix: Ajuste en el manejo de campos nulos en el modelo de clientes

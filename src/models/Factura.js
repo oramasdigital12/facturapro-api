@@ -128,7 +128,9 @@ class Factura {
         ...datos,
         numero_factura: numeroFactura,
         fecha_factura: datos.fecha_factura || new Date().toISOString().split('T')[0],
+        fecha_vencimiento: datos.fecha_vencimiento || null,
         estado: datos.estado || 'pendiente',
+        metodo_pago_id: datos.metodo_pago_id || null,
         logo_personalizado_url: datos.logo_personalizado_url || configNegocio.logo_url,
         firma_url: datos.firma_url || configNegocio.firma_url,
         terminos: datos.terminos || configNegocio.terminos_condiciones,
@@ -175,6 +177,7 @@ class Factura {
         .select(`
           *,
           cliente:clientes(id, nombre, email, telefono),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
           items:factura_items(*)
         `)
         .eq('user_id', userId);
@@ -213,6 +216,7 @@ class Factura {
         .select(`
           *,
           cliente:clientes(id, nombre, email, telefono, direccion),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
           items:factura_items(*)
         `)
         .eq('id', facturaId)
@@ -233,6 +237,7 @@ class Factura {
         .select(`
           *,
           cliente:clientes(id, nombre, email, telefono, direccion),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
           items:factura_items(*)
         `)
         .eq('id', uuid)

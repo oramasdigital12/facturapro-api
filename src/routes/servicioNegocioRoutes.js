@@ -47,7 +47,7 @@ router.post('/', authenticateToken, [body('nombre').notEmpty().trim(), body('pre
  * @swagger
  * /api/servicios-negocio:
  *   get:
- *     summary: Listar servicios del usuario (opcional: filtrar por categoría)
+ *     summary: Listar servicios del usuario (opcional filtrar por categoria)
  *     tags: [ServicioNegocio]
  *     security:
  *       - BearerAuth: []
