@@ -49,6 +49,7 @@ app.use(cors({
   origin: [
     'https://gestionapro.netlify.app',
     'https://vendedorpro.app',
+    'https://facturapro.app',
     'https://gestionaexpress.netlify.app',
     'https://gestionarapido.netlify.app',
     'https://venderapido.netlify.app',
