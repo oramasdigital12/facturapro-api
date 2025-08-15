@@ -240,7 +240,7 @@ class Factura {
           metodo_pago:metodos_pago(id, nombre, link, descripcion),
           items:factura_items(*)
         `)
-        .eq('id', uuid)
+        .eq('uuid_publico', uuid)
         .single();
 
       if (error) throw error;

@@ -446,14 +446,14 @@ export const redirectToPdfPublicById = async (req, res) => {
 
 export const obtenerFacturaPublica = async (req, res) => {
     try {
-        const supabase = getSupabaseForUser(req.token);
-        const factura = await Factura.obtenerPorUuidPublico(req.params.uuid, supabase);
+        // Usar supabaseStorage directamente para rutas públicas
+        const factura = await Factura.obtenerPorUuidPublico(req.params.uuid, supabaseStorage);
         
         if (!factura) {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
         // Obtener configuración del negocio para generar nombre de archivo
-        const negocio = await Factura.obtenerConfiguracionNegocio(factura.user_id, supabase);
+        const negocio = await Factura.obtenerConfiguracionNegocio(factura.user_id, supabaseStorage);
         
         // Calcular pdfUrl
         let pdfUrl = null;
