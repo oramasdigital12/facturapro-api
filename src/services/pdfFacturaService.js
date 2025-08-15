@@ -441,7 +441,12 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
   if (error) throw error;
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  
+  // Agregar timestamp como parámetro de query para evitar cacheo
+  const timestamp = Date.now();
+  const pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+  
+  return pdfUrl;
 }
 
 // Exportar función auxiliar para uso en otros archivos

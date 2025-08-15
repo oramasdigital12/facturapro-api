@@ -422,6 +422,116 @@ router.put('/:id',
 
 /**
  * @swagger
+ * /api/facturas/{id}/pdf:
+ *   get:
+ *     summary: Obtener PDF de factura con URL corta
+ *     tags: [Facturas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       302:
+ *         description: Redirección al PDF
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.get('/:id/pdf',
+  authenticateToken,
+  facturaController.redirectToPdf
+);
+
+/**
+ * @swagger
+ * /api/facturas/pdf/{uuid}:
+ *   get:
+ *     summary: Obtener PDF de factura pública con URL corta
+ *     tags: [Facturas]
+ *     parameters:
+ *       - in: path
+ *         name: uuid
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: UUID público de la factura
+ *     responses:
+ *       302:
+ *         description: Redirección al PDF
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.get('/pdf/:uuid',
+  facturaController.redirectToPdfPublic
+);
+
+/**
+ * @swagger
+ * /api/facturas/{id}/pdf/public:
+ *   get:
+ *     summary: Obtener PDF de factura con URL corta (sin autenticación)
+ *     tags: [Facturas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       302:
+ *         description: Redirección al PDF
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.get('/:id/pdf/public',
+  facturaController.redirectToPdfPublicById
+);
+
+/**
+ * @swagger
+ * /api/facturas/{id}/regenerate-pdf:
+ *   post:
+ *     summary: Regenerar el PDF de una factura
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       200:
+ *         description: PDF regenerado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: PDF regenerado exitosamente
+ *                 factura:
+ *                   $ref: '#/components/schemas/Factura'
+ *       404:
+ *         description: Factura no encontrada
+ *       500:
+ *         description: Error al regenerar PDF
+ */
+router.post('/:id/regenerate-pdf',
+  authenticateToken,
+  createLimiter,
+  validateUUID('id'),
+  facturaController.regenerarPdfFactura
+);
+
+/**
+ * @swagger
  * /api/facturas/{id}:
  *   delete:
  *     summary: Eliminar una factura

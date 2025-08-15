@@ -99,7 +99,11 @@ export const obtenerFacturas = async (req, res) => {
                 const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
                 const filePath = `${factura.user_id}/${fileName}`;
                 const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
-                pdfUrl = data?.publicUrl || null;
+                if (data?.publicUrl) {
+                    // Agregar timestamp para evitar cacheo
+                    const timestamp = Date.now();
+                    pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+                }
             }
             return { ...factura, pdfUrl };
         });
@@ -131,7 +135,11 @@ export const obtenerFactura = async (req, res) => {
           const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
           const filePath = `${factura.user_id}/${fileName}`;
           const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
-          pdfUrl = data?.publicUrl || null;
+          if (data?.publicUrl) {
+              // Agregar timestamp para evitar cacheo
+              const timestamp = Date.now();
+              pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+          }
         }
         res.json({ ...factura, pdfUrl });
     } catch (error) {
@@ -197,17 +205,22 @@ export const actualizarFactura = async (req, res) => {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
 
-        // Obtener datos de cliente y negocio para el PDF
-        const cliente = factura.cliente || null;
+        // Obtener la factura completa con cliente para el PDF
+        const facturaCompleta = await Factura.obtenerPorId(req.params.id, req.user.id, supabase);
         const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
-        // Generar y subir PDF
+        
+        // Generar y subir PDF con datos actualizados
         let pdfUrl = null;
         try {
-          pdfUrl = await generarYSubirPdfFactura({ factura, cliente, negocio }, req.user.id);
+          pdfUrl = await generarYSubirPdfFactura({ factura: facturaCompleta, cliente: facturaCompleta.cliente, negocio }, req.user.id);
+          console.log('✅ PDF regenerado exitosamente para factura:', req.params.id);
+          console.log('📊 Estado actualizado:', facturaCompleta.estado);
+          console.log('💰 Balance actualizado:', facturaCompleta.balance_restante);
         } catch (err) {
-          console.error('Error al generar/subir PDF:', err);
+          console.error('❌ Error al generar/subir PDF:', err);
         }
-        res.json({ ...factura, pdfUrl });
+        
+        res.json({ ...facturaCompleta, pdfUrl });
     } catch (error) {
         console.error('Error al actualizar factura:', error);
         res.status(500).json({
@@ -252,6 +265,185 @@ export const eliminarFactura = async (req, res) => {
     }
 };
 
+export const regenerarPdfFactura = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+        
+        // Obtener la factura actualizada
+        const factura = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        
+        if (!factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+        
+        // Obtener configuración del negocio
+        const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
+        
+        // Generar y subir el nuevo PDF
+        let pdfUrl = null;
+        try {
+            pdfUrl = await generarYSubirPdfFactura({ factura, cliente: factura.cliente, negocio }, req.user.id);
+            
+            console.log('✅ PDF regenerado manualmente para factura:', facturaId);
+            console.log('📊 Estado actual:', factura.estado);
+            console.log('💰 Balance actual:', factura.balance_restante);
+            
+            res.json({ 
+                message: 'PDF regenerado exitosamente',
+                factura: { ...factura, pdfUrl }
+            });
+        } catch (err) {
+            console.error('❌ Error al regenerar PDF:', err);
+            res.status(500).json({
+                error: 'Error al regenerar PDF',
+                details: err.message
+            });
+        }
+    } catch (error) {
+        console.error('Error al regenerar PDF de factura:', error);
+        res.status(500).json({
+            error: 'Error al regenerar PDF de factura',
+            details: error.message
+        });
+    }
+};
+
+export const redirectToPdf = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+        
+        // Obtener la factura
+        const factura = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        
+        if (!factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+        
+        // Obtener configuración del negocio
+        const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
+        
+        // Generar URL del PDF
+        const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
+        const filePath = `${req.user.id}/${fileName}`;
+        const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+        
+        if (data?.publicUrl) {
+            // Agregar timestamp para evitar cacheo
+            const timestamp = Date.now();
+            const pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+            
+            // Redirigir al PDF
+            res.redirect(pdfUrl);
+        } else {
+            res.status(404).json({ error: 'PDF no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error al redirigir al PDF:', error);
+        res.status(500).json({
+            error: 'Error al acceder al PDF',
+            details: error.message
+        });
+    }
+};
+
+export const redirectToPdfPublic = async (req, res) => {
+    try {
+        // Usar supabaseStorage directamente para rutas públicas
+        const uuidPublico = req.params.uuid;
+        
+        // Obtener la factura por UUID público sin filtrar por usuario
+        const { data: factura, error } = await supabaseStorage
+            .from('facturas')
+            .select(`
+                *,
+                cliente:clientes(id, nombre, email, telefono, direccion),
+                metodo_pago:metodos_pago(id, nombre, link, descripcion),
+                items:factura_items(*)
+            `)
+            .eq('uuid_publico', uuidPublico)
+            .single();
+        
+        if (error || !factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+        
+        // Obtener configuración del negocio
+        const negocio = await Factura.obtenerConfiguracionNegocio(factura.user_id, supabaseStorage);
+        
+        // Generar URL del PDF
+        const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
+        const filePath = `${factura.user_id}/${fileName}`;
+        const { data: urlData } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+        
+        if (urlData?.publicUrl) {
+            // Agregar timestamp para evitar cacheo
+            const timestamp = Date.now();
+            const pdfUrl = `${urlData.publicUrl}?t=${timestamp}`;
+            
+            // Redirigir al PDF
+            res.redirect(pdfUrl);
+        } else {
+            res.status(404).json({ error: 'PDF no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error al redirigir al PDF público:', error);
+        res.status(500).json({
+            error: 'Error al acceder al PDF',
+            details: error.message
+        });
+    }
+};
+
+export const redirectToPdfPublicById = async (req, res) => {
+    try {
+        // Usar supabaseStorage directamente para rutas públicas
+        const facturaId = req.params.id;
+        
+        // Obtener la factura por ID sin filtrar por usuario
+        const { data: factura, error } = await supabaseStorage
+            .from('facturas')
+            .select(`
+                *,
+                cliente:clientes(id, nombre, email, telefono, direccion),
+                metodo_pago:metodos_pago(id, nombre, link, descripcion),
+                items:factura_items(*)
+            `)
+            .eq('id', facturaId)
+            .single();
+        
+        if (error || !factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+        
+        // Obtener configuración del negocio
+        const negocio = await Factura.obtenerConfiguracionNegocio(factura.user_id, supabaseStorage);
+        
+        // Generar URL del PDF
+        const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
+        const filePath = `${factura.user_id}/${fileName}`;
+        const { data: urlData } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
+        
+        if (urlData?.publicUrl) {
+            // Agregar timestamp para evitar cacheo
+            const timestamp = Date.now();
+            const pdfUrl = `${urlData.publicUrl}?t=${timestamp}`;
+            
+            // Redirigir al PDF
+            res.redirect(pdfUrl);
+        } else {
+            res.status(404).json({ error: 'PDF no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error al redirigir al PDF público por ID:', error);
+        res.status(500).json({
+            error: 'Error al acceder al PDF',
+            details: error.message
+        });
+    }
+};
+
 export const obtenerFacturaPublica = async (req, res) => {
     try {
         const supabase = getSupabaseForUser(req.token);
@@ -269,7 +461,11 @@ export const obtenerFacturaPublica = async (req, res) => {
           const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
           const filePath = `${factura.user_id}/${fileName}`;
           const { data } = supabaseStorage.storage.from(BUCKET).getPublicUrl(filePath);
-          pdfUrl = data?.publicUrl || null;
+          if (data?.publicUrl) {
+              // Agregar timestamp para evitar cacheo
+              const timestamp = Date.now();
+              pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+          }
         }
         // Formatear la respuesta para la vista pública
         const facturaFormateada = {
