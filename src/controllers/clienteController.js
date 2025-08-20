@@ -12,11 +12,15 @@ export const crearCliente = async (req, res) => {
 
         const supabase = getSupabaseForUser(req.token);
         const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number } = req.body;
+        
+        // Convertir "pendiente" a "inactivo" automáticamente
+        const categoriaFinal = categoria === 'pendiente' ? 'inactivo' : categoria;
+        
         const cliente = await Cliente.crear({
             nombre,
             email,
             telefono,
-            categoria,
+            categoria: categoriaFinal,
             fecha_nacimiento,
             fecha_vencimiento,
             fecha_inicio,
@@ -80,7 +84,10 @@ export const actualizarCliente = async (req, res) => {
         if (nombre !== undefined) datosActualizados.nombre = nombre;
         if (email !== undefined) datosActualizados.email = email;
         if (telefono !== undefined) datosActualizados.telefono = telefono;
-        if (categoria !== undefined) datosActualizados.categoria = categoria;
+        if (categoria !== undefined) {
+          // Convertir "pendiente" a "inactivo" automáticamente
+          datosActualizados.categoria = categoria === 'pendiente' ? 'inactivo' : categoria;
+        }
         if (fecha_nacimiento !== undefined) datosActualizados.fecha_nacimiento = fecha_nacimiento;
         if (fecha_vencimiento !== undefined) datosActualizados.fecha_vencimiento = fecha_vencimiento;
         if (fecha_inicio !== undefined) datosActualizados.fecha_inicio = fecha_inicio;

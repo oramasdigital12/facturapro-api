@@ -40,15 +40,15 @@ export const crearFactura = async (req, res) => {
         const facturaCreada = await Factura.crear({
             cliente_id,
             fecha_factura,
-            fecha_vencimiento,
+            fecha_vencimiento: fecha_vencimiento && fecha_vencimiento !== 'mm/dd/yyyy' ? fecha_vencimiento : null,
             estado,
             subtotal,
             impuesto,
             total,
             deposito,
             balance_restante,
-            nota,
-            terminos,
+            nota: nota && nota.trim() !== '' ? nota : '',
+            terminos: terminos && terminos.trim() !== '' ? terminos : '',
             logo_personalizado_url,
             firma_url,
             metodo_pago_id,
@@ -66,7 +66,13 @@ export const crearFactura = async (req, res) => {
         } catch (err) {
           console.error('Error al generar/subir PDF:', err);
         }
-        res.status(201).json({ ...factura, pdfUrl });
+        // Agregar número de factura formateado para el frontend
+        const facturaConFormato = {
+            ...factura,
+            numero_factura_formateado: `100${factura.numero_factura}`,
+            pdfUrl
+        };
+        res.status(201).json(facturaConFormato);
     } catch (error) {
         console.error('Error al crear factura:', error);
         res.status(500).json({
@@ -105,7 +111,11 @@ export const obtenerFacturas = async (req, res) => {
                     pdfUrl = `${data.publicUrl}?t=${timestamp}`;
                 }
             }
-            return { ...factura, pdfUrl };
+            return { 
+                ...factura, 
+                numero_factura_formateado: `100${factura.numero_factura}`,
+                pdfUrl 
+            };
         });
 
         res.json(facturasConPdf);
@@ -141,7 +151,13 @@ export const obtenerFactura = async (req, res) => {
               pdfUrl = `${data.publicUrl}?t=${timestamp}`;
           }
         }
-        res.json({ ...factura, pdfUrl });
+        // Agregar número de factura formateado para el frontend
+        const facturaConFormato = {
+            ...factura,
+            numero_factura_formateado: `100${factura.numero_factura}`,
+            pdfUrl
+        };
+        res.json(facturaConFormato);
     } catch (error) {
         console.error('Error al obtener factura:', error);
         res.status(500).json({
@@ -180,15 +196,15 @@ export const actualizarFactura = async (req, res) => {
         const datosActualizados = {};
         if (cliente_id !== undefined) datosActualizados.cliente_id = cliente_id;
         if (fecha_factura !== undefined) datosActualizados.fecha_factura = fecha_factura;
-        if (fecha_vencimiento !== undefined) datosActualizados.fecha_vencimiento = fecha_vencimiento;
+        if (fecha_vencimiento !== undefined) datosActualizados.fecha_vencimiento = fecha_vencimiento && fecha_vencimiento !== 'mm/dd/yyyy' ? fecha_vencimiento : null;
         if (estado !== undefined) datosActualizados.estado = estado;
         if (subtotal !== undefined) datosActualizados.subtotal = subtotal;
         if (impuesto !== undefined) datosActualizados.impuesto = impuesto;
         if (total !== undefined) datosActualizados.total = total;
         if (deposito !== undefined) datosActualizados.deposito = deposito;
         if (balance_restante !== undefined) datosActualizados.balance_restante = balance_restante;
-        if (nota !== undefined) datosActualizados.nota = nota;
-        if (terminos !== undefined) datosActualizados.terminos = terminos;
+        if (nota !== undefined) datosActualizados.nota = nota && nota.trim() !== '' ? nota : '';
+        if (terminos !== undefined) datosActualizados.terminos = terminos && terminos.trim() !== '' ? terminos : '';
         if (logo_personalizado_url !== undefined) datosActualizados.logo_personalizado_url = logo_personalizado_url;
         if (firma_url !== undefined) datosActualizados.firma_url = firma_url;
         if (metodo_pago_id !== undefined) datosActualizados.metodo_pago_id = metodo_pago_id;
@@ -220,7 +236,13 @@ export const actualizarFactura = async (req, res) => {
           console.error('❌ Error al generar/subir PDF:', err);
         }
         
-        res.json({ ...facturaCompleta, pdfUrl });
+        // Agregar número de factura formateado para el frontend
+        const facturaConFormato = {
+            ...facturaCompleta,
+            numero_factura_formateado: `100${facturaCompleta.numero_factura}`,
+            pdfUrl
+        };
+        res.json(facturaConFormato);
     } catch (error) {
         console.error('Error al actualizar factura:', error);
         res.status(500).json({

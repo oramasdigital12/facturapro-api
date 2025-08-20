@@ -14,8 +14,9 @@ function generarNombreArchivo(factura, cliente, negocio) {
   const nombreNegocio = (negocio?.nombre_negocio || 'Negocio').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   const nombreCliente = (cliente?.nombre || 'Cliente').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   const numeroFactura = factura.numero_factura || '000';
+  const numeroFacturaFormateado = `100${numeroFactura}`;
   
-  return `${nombreNegocio}-${nombreCliente}-${numeroFactura}.pdf`;
+  return `${nombreNegocio}-${nombreCliente}-${numeroFacturaFormateado}.pdf`;
 }
 
 function facturaHtmlTemplate(factura, cliente, negocio) {
@@ -32,7 +33,7 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
   <html>
     <head>
       <meta charset="utf-8" />
-      <title>Invoice #${factura.numero_factura}</title>
+      <title>Invoice #100${factura.numero_factura || '000'}</title>
       <style>
         @page {
           size: A4;
@@ -309,14 +310,16 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
             <div class="invoice-details">
               <div class="section-title">INVOICE DETAILS:</div>
               <div class="detail-row">
-                <span class="detail-label">Invoice #:</span> ${factura.numero_factura || '0000'}
+                <span class="detail-label">Invoice #:</span> 100${factura.numero_factura || '000'}
               </div>
               <div class="detail-row">
                 <span class="detail-label">Date of Issue:</span> ${factura.fecha_factura || 'MM/DD/YYYY'}
               </div>
+              ${factura.fecha_vencimiento && factura.fecha_vencimiento !== '1999-99-99' && factura.fecha_vencimiento !== null ? `
               <div class="detail-row">
-                <span class="detail-label">Due Date:</span> ${factura.fecha_vencimiento || 'MM/DD/YYYY'}
+                <span class="detail-label">Due Date:</span> ${factura.fecha_vencimiento}
               </div>
+              ` : ''}
             </div>
             <div class="bill-to">
               <div class="section-title">BILL TO:</div>
@@ -362,11 +365,15 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
           <!-- Bottom Section -->
           <div class="bottom-section">
             <div class="terms-section">
+              ${(factura.terminos && factura.terminos.trim() !== '') || (negocio?.terminos_condiciones && negocio.terminos_condiciones.trim() !== '') ? `
               <div class="section-title">TERMS</div>
-              <div class="terms-content">${factura.terminos || negocio?.terminos_condiciones || 'Text Here'}</div>
+              <div class="terms-content">${factura.terminos || negocio?.terminos_condiciones || ''}</div>
+              ` : ''}
               
+              ${(factura.nota && factura.nota.trim() !== '') || (negocio?.nota_factura && negocio.nota_factura.trim() !== '') ? `
               <div class="section-title" style="margin-top: 20px;">CONDITIONS/INSTRUCTIONS</div>
-              <div class="terms-content">${factura.nota || negocio?.nota_factura || 'Text Here'}</div>
+              <div class="terms-content">${factura.nota || negocio?.nota_factura || ''}</div>
+              ` : ''}
             </div>
             
             <div class="totals-section">

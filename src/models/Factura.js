@@ -67,21 +67,47 @@ const validarItemsFactura = (items) => {
 class Factura {
   static async obtenerSiguienteNumero(userId, supabase) {
     try {
-      const { data, error } = await supabase
+      // Obtener todas las facturas del usuario y ordenarlas numéricamente en JavaScript
+      const { data: facturas, error } = await supabase
         .from('facturas')
         .select('numero_factura')
-        .eq('user_id', userId)
-        .order('numero_factura', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('user_id', userId);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
         throw error;
       }
 
-      return data ? data.numero_factura + 1 : 1;
+      if (!facturas || facturas.length === 0) {
+        return 1;
+      }
+
+      // Convertir a números y encontrar el máximo
+      const numeros = facturas.map(f => parseInt(f.numero_factura) || 0);
+      const maximo = Math.max(...numeros);
+      
+      return maximo + 1;
     } catch (error) {
       console.error('Error al obtener siguiente número de factura:', error);
+      throw error;
+    }
+  }
+
+  static async verificarNumeroFacturaExiste(numeroFactura, userId, supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('facturas')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('numero_factura', numeroFactura)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      return !!data; // Retorna true si existe, false si no existe
+    } catch (error) {
+      console.error('Error al verificar número de factura:', error);
       throw error;
     }
   }
@@ -117,8 +143,16 @@ class Factura {
         throw new Error('Errores en items: ' + erroresItems.join(', '));
       }
 
-      // Obtener siguiente número de factura
-      const numeroFactura = await this.obtenerSiguienteNumero(datos.user_id, supabase);
+      // Obtener siguiente número de factura (usar el proporcionado o generar automáticamente)
+      const numeroFactura = datos.numero_factura || await this.obtenerSiguienteNumero(datos.user_id, supabase);
+      
+      // Si se proporcionó un número de factura, verificar que no exista
+      if (datos.numero_factura) {
+        const existe = await this.verificarNumeroFacturaExiste(numeroFactura, datos.user_id, supabase);
+        if (existe) {
+          throw new Error(`El número de factura ${numeroFactura} ya existe`);
+        }
+      }
       
       // Obtener configuración del negocio para valores por defecto
       const configNegocio = await this.obtenerConfiguracionNegocio(datos.user_id, supabase);
@@ -128,13 +162,13 @@ class Factura {
         ...datos,
         numero_factura: numeroFactura,
         fecha_factura: datos.fecha_factura || new Date().toISOString().split('T')[0],
-        fecha_vencimiento: datos.fecha_vencimiento || null,
+        fecha_vencimiento: datos.fecha_vencimiento || null, // Valor por defecto para campos opcionales
         estado: datos.estado || 'pendiente',
         metodo_pago_id: datos.metodo_pago_id || null,
         logo_personalizado_url: datos.logo_personalizado_url || configNegocio.logo_url,
         firma_url: datos.firma_url || configNegocio.firma_url,
-        terminos: datos.terminos || configNegocio.terminos_condiciones,
-        nota: datos.nota || configNegocio.nota_factura
+        terminos: datos.terminos || '', // Campo opcional, no usar configuración por defecto
+        nota: datos.nota || '' // Campo opcional, no usar configuración por defecto
       };
 
       // Crear la factura

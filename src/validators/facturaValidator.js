@@ -5,6 +5,11 @@ export const crearFacturaValidator = [
     .isUUID()
     .withMessage('El cliente_id debe ser un UUID válido'),
   
+  body('numero_factura')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('El número de factura debe ser un número entero mayor a 0'),
+  
   body('fecha_factura')
     .optional()
     .isISO8601()
@@ -12,8 +17,15 @@ export const crearFacturaValidator = [
   
   body('fecha_vencimiento')
     .optional()
-    .isISO8601()
-    .withMessage('La fecha_vencimiento debe ser una fecha válida'),
+    .custom((value) => {
+      if (value === undefined || value === null || value === '' || value === 'mm/dd/yyyy') {
+        return true; // Permitir valores vacíos o placeholder
+      }
+      // Si tiene valor, validar que sea una fecha válida
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .withMessage('La fecha_vencimiento debe ser una fecha válida o estar vacía'),
   
   body('estado')
     .optional()
@@ -121,8 +133,15 @@ export const actualizarFacturaValidator = [
   
   body('fecha_vencimiento')
     .optional()
-    .isISO8601()
-    .withMessage('La fecha_vencimiento debe ser una fecha válida'),
+    .custom((value) => {
+      if (value === undefined || value === null || value === '' || value === 'mm/dd/yyyy') {
+        return true; // Permitir valores vacíos o placeholder
+      }
+      // Si tiene valor, validar que sea una fecha válida
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .withMessage('La fecha_vencimiento debe ser una fecha válida o estar vacía'),
   
   body('estado')
     .optional()
