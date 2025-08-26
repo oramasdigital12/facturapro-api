@@ -7,6 +7,11 @@ import { getSupabaseForUser } from '../config/supabase.js';
  */
 export const crearMensaje = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const supabase = getSupabaseForUser(req.token);
     const mensaje = await Mensaje.crear(req.body, req.user.id, supabase);
     res.status(201).json(mensaje);
@@ -27,6 +32,21 @@ export const listarMensajes = async (req, res) => {
   } catch (error) {
     console.error('Error al listar mensajes:', error);
     res.status(500).json({ error: 'Error al listar mensajes', details: error.message });
+  }
+};
+
+/**
+ * Lista mensajes predeterminados por módulo específico
+ */
+export const listarMensajesPorModulo = async (req, res) => {
+  try {
+    const { modulo } = req.params;
+    const supabase = getSupabaseForUser(req.token);
+    const mensajes = await Mensaje.listarPorModulo(modulo, req.user.id, supabase);
+    res.json(mensajes);
+  } catch (error) {
+    console.error('Error al listar mensajes por módulo:', error);
+    res.status(500).json({ error: 'Error al listar mensajes por módulo', details: error.message });
   }
 };
 
@@ -52,6 +72,11 @@ export const obtenerMensaje = async (req, res) => {
  */
 export const actualizarMensaje = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const supabase = getSupabaseForUser(req.token);
     const mensaje = await Mensaje.actualizar(req.params.id, req.body, req.user.id, supabase);
     if (!mensaje) {
@@ -86,6 +111,11 @@ export const eliminarMensaje = async (req, res) => {
  */
 export const generarLinkWhatsApp = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { telefono, mensajeId } = req.body;
 
     if (!telefono || !mensajeId) {

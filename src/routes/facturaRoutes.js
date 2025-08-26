@@ -301,6 +301,79 @@ router.get('/',
 
 /**
  * @swagger
+ * /api/facturas/eliminadas:
+ *   get:
+ *     summary: Obtener facturas eliminadas (en papelera)
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de facturas eliminadas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Factura'
+ */
+router.get('/eliminadas', 
+  authenticateToken, 
+  facturaController.obtenerFacturasEliminadas
+);
+
+/**
+ * @swagger
+ * /api/facturas/limpiar-antiguas:
+ *   post:
+ *     summary: Limpiar facturas eliminadas antiguas (automático)
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               diasRetencion:
+ *                 type: integer
+ *                 description: Días de retención (mínimo 365, por defecto 2555 = 7 años)
+ *                 default: 2555
+ *     responses:
+ *       200:
+ *         description: Limpieza completada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Limpieza completada. 5 de 10 facturas antiguas eliminadas"
+ *                 resultado:
+ *                   type: object
+ *                   properties:
+ *                     eliminadas:
+ *                       type: integer
+ *                       description: Número de facturas eliminadas
+ *                     total:
+ *                       type: integer
+ *                       description: Total de facturas procesadas
+ *                 diasRetencion:
+ *                 type: integer
+ *                 description: Días de retención utilizados
+ *       400:
+ *         description: Días de retención inválidos
+ */
+router.post('/limpiar-antiguas', 
+  authenticateToken, 
+  facturaController.limpiarFacturasAntiguas
+);
+
+/**
+ * @swagger
  * /api/facturas/{id}:
  *   get:
  *     summary: Obtener una factura por ID
@@ -529,6 +602,168 @@ router.post('/:id/regenerate-pdf',
   validateUUID('id'),
   facturaController.regenerarPdfFactura
 );
+
+/**
+ * @swagger
+ * /api/facturas/{id}/convertir-borrador:
+ *   post:
+ *     summary: Convertir un borrador en factura pendiente
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura borrador
+ *     responses:
+ *       200:
+ *         description: Borrador convertido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Borrador convertido exitosamente a factura pendiente"
+ *                 factura:
+ *                   $ref: '#/components/schemas/Factura'
+ *       400:
+ *         description: La factura no es un borrador
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.post('/:id/convertir-borrador', 
+  authenticateToken, 
+  validateUUID('id'),
+  facturaController.convertirBorradorEnFactura
+);
+
+/**
+ * @swagger
+ * /api/facturas/{id}/soft-delete:
+ *   post:
+ *     summary: Mover factura a papelera (soft delete)
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       200:
+ *         description: Factura movida a papelera exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Factura movida a papelera exitosamente"
+ *                 factura:
+ *                   $ref: '#/components/schemas/Factura'
+ *                 deleted_at:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: La factura ya ha sido eliminada
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.post('/:id/soft-delete', 
+  authenticateToken, 
+  validateUUID('id'),
+  facturaController.softDeleteFactura
+);
+
+/**
+ * @swagger
+ * /api/facturas/{id}/hard-delete:
+ *   delete:
+ *     summary: Eliminar factura permanentemente (hard delete)
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       200:
+ *         description: Factura eliminada permanentemente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Factura eliminada permanentemente"
+ *                 factura_id:
+ *                   type: string
+ *                 deleted_at:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Factura no encontrada
+ */
+router.delete('/:id/hard-delete', 
+  authenticateToken, 
+  validateUUID('id'),
+  facturaController.hardDeleteFactura
+);
+
+/**
+ * @swagger
+ * /api/facturas/{id}/restore:
+ *   post:
+ *     summary: Restaurar factura desde la papelera
+ *     tags: [Facturas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la factura
+ *     responses:
+ *       200:
+ *         description: Factura restaurada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Factura restaurada exitosamente"
+ *                 factura:
+ *                   $ref: '#/components/schemas/Factura'
+ *       404:
+ *         description: Factura no encontrada en papelera
+ */
+router.post('/:id/restore', 
+  authenticateToken, 
+  validateUUID('id'),
+  facturaController.restoreFactura
+);
+
+
+
+
 
 /**
  * @swagger

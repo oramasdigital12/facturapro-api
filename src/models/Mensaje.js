@@ -1,10 +1,10 @@
 import { supabase } from '../config/supabase.js';
 
 class Mensaje {
-  static async crear({ texto }, user_id, supabase) {
+  static async crear({ texto, modulo = 'general' }, user_id, supabase) {
     const { data, error } = await supabase
       .from('mensajes')
-      .insert([{ texto, user_id }])
+      .insert([{ texto, modulo, user_id }])
       .select()
       .single();
     if (error) throw error;
@@ -21,6 +21,17 @@ class Mensaje {
     return data;
   }
 
+  static async listarPorModulo(modulo, user_id, supabase) {
+    const { data, error } = await supabase
+      .from('mensajes')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('modulo', modulo)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
   static async obtenerPorId(id, user_id, supabase) {
     const { data, error } = await supabase
       .from('mensajes')
@@ -32,10 +43,15 @@ class Mensaje {
     return data;
   }
 
-  static async actualizar(id, { texto }, user_id, supabase) {
+  static async actualizar(id, { texto, modulo }, user_id, supabase) {
+    const updateData = { texto };
+    if (modulo !== undefined) {
+      updateData.modulo = modulo;
+    }
+    
     const { data, error } = await supabase
       .from('mensajes')
-      .update({ texto })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', user_id)
       .select()

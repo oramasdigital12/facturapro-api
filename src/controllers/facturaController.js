@@ -521,3 +521,220 @@ export const obtenerFacturaPublica = async (req, res) => {
         });
     }
 }; 
+
+export const convertirBorradorEnFactura = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+
+        // Obtener la factura actual
+        const facturaActual = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        
+        if (!facturaActual) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        // Verificar que la factura sea un borrador
+        if (facturaActual.estado !== 'borrador') {
+            return res.status(400).json({ 
+                error: 'Solo se pueden convertir borradores en facturas',
+                estado_actual: facturaActual.estado
+            });
+        }
+
+        // Actualizar el estado a 'pendiente'
+        const datosActualizados = {
+            estado: 'pendiente'
+        };
+
+        const factura = await Factura.actualizar(
+            facturaId, 
+            datosActualizados, 
+            null, // No cambiar items
+            req.user.id, 
+            supabase
+        );
+
+        if (!factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        // Obtener la factura completa con cliente para el PDF
+        const facturaCompleta = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        const negocio = await Factura.obtenerConfiguracionNegocio(req.user.id, supabase);
+        
+        // Generar y subir PDF con el nuevo estado
+        let pdfUrl = null;
+        try {
+            pdfUrl = await generarYSubirPdfFactura({ factura: facturaCompleta, cliente: facturaCompleta.cliente, negocio }, req.user.id);
+            console.log('✅ PDF regenerado exitosamente para factura convertida:', facturaId);
+            console.log('📊 Estado actualizado de borrador a pendiente');
+        } catch (err) {
+            console.error('❌ Error al generar/subir PDF:', err);
+        }
+        
+        // Agregar número de factura formateado para el frontend
+        const facturaConFormato = {
+            ...facturaCompleta,
+            numero_factura_formateado: `100${facturaCompleta.numero_factura}`,
+            pdfUrl
+        };
+
+        res.json({
+            message: 'Borrador convertido exitosamente a factura pendiente',
+            factura: facturaConFormato
+        });
+    } catch (error) {
+        console.error('Error al convertir borrador en factura:', error);
+        res.status(500).json({
+            error: 'Error al convertir borrador en factura',
+            details: error.message
+        });
+    }
+};
+
+export const softDeleteFactura = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+
+        // Obtener la factura actual
+        const factura = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        
+        if (!factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        // Verificar que la factura no esté ya eliminada
+        if (factura.deleted_at) {
+            return res.status(400).json({ 
+                error: 'La factura ya ha sido eliminada',
+                deleted_at: factura.deleted_at
+            });
+        }
+
+        // Realizar soft delete
+        const resultado = await Factura.softDelete(facturaId, req.user.id, supabase);
+
+        if (!resultado) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        res.json({
+            message: 'Factura movida a papelera exitosamente',
+            factura: resultado,
+            deleted_at: resultado.deleted_at
+        });
+    } catch (error) {
+        console.error('Error al realizar soft delete de factura:', error);
+        res.status(500).json({
+            error: 'Error al mover factura a papelera',
+            details: error.message
+        });
+    }
+};
+
+export const hardDeleteFactura = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+
+        // Obtener la factura actual
+        const factura = await Factura.obtenerPorId(facturaId, req.user.id, supabase);
+        
+        if (!factura) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        // Realizar hard delete
+        const resultado = await Factura.hardDelete(facturaId, req.user.id, supabase);
+
+        if (!resultado) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        res.json({
+            message: 'Factura eliminada permanentemente',
+            factura_id: facturaId,
+            deleted_at: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error al realizar hard delete de factura:', error);
+        res.status(500).json({
+            error: 'Error al eliminar factura permanentemente',
+            details: error.message
+        });
+    }
+};
+
+export const restoreFactura = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const facturaId = req.params.id;
+
+        // Restaurar la factura
+        const resultado = await Factura.restore(facturaId, req.user.id, supabase);
+
+        if (!resultado) {
+            return res.status(404).json({ error: 'Factura no encontrada en papelera' });
+        }
+
+        res.json({
+            message: 'Factura restaurada exitosamente',
+            factura: resultado
+        });
+    } catch (error) {
+        console.error('Error al restaurar factura:', error);
+        res.status(500).json({
+            error: 'Error al restaurar factura',
+            details: error.message
+        });
+    }
+};
+
+export const obtenerFacturasEliminadas = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        
+        // Obtener facturas eliminadas (soft deleted)
+        const facturas = await Factura.obtenerEliminadas(req.user.id, supabase);
+
+        res.json(facturas);
+    } catch (error) {
+        console.error('Error al obtener facturas eliminadas:', error);
+        res.status(500).json({
+            error: 'Error al obtener facturas eliminadas',
+            details: error.message
+        });
+    }
+}; 
+
+export const limpiarFacturasAntiguas = async (req, res) => {
+    try {
+        const supabase = getSupabaseForUser(req.token);
+        const { diasRetencion = 2555 } = req.body; // 7 años por defecto
+
+        // Validar días de retención
+        if (diasRetencion < 365) {
+            return res.status(400).json({ 
+                error: 'La retención mínima debe ser de 1 año (365 días)',
+                diasRetencion: diasRetencion
+            });
+        }
+
+        // Realizar limpieza
+        const resultado = await Factura.limpiarFacturasAntiguas(req.user.id, supabase, diasRetencion);
+
+        res.json({
+            message: `Limpieza completada. ${resultado.eliminadas} de ${resultado.total} facturas antiguas eliminadas`,
+            resultado: resultado,
+            diasRetencion: diasRetencion
+        });
+    } catch (error) {
+        console.error('Error al limpiar facturas antiguas:', error);
+        res.status(500).json({
+            error: 'Error al limpiar facturas antiguas',
+            details: error.message
+        });
+    }
+}; 

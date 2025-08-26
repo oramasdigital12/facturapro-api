@@ -214,7 +214,8 @@ class Factura {
           metodo_pago:metodos_pago(id, nombre, link, descripcion),
           items:factura_items(*)
         `)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .is('deleted_at', null); // Excluir facturas eliminadas por soft delete
 
       // Aplicar filtros
       if (filtros.cliente_id) {
@@ -255,6 +256,7 @@ class Factura {
         `)
         .eq('id', facturaId)
         .eq('user_id', userId)
+        .is('deleted_at', null) // Excluir facturas eliminadas por soft delete
         .single();
 
       if (error) throw error;
@@ -379,6 +381,251 @@ class Factura {
 
       if (error) throw error;
       return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async obtenerEliminadas(userId, supabase) {
+    try {
+      const { data: facturas, error } = await supabase
+        .from('facturas')
+        .select(`
+          *,
+          cliente:clientes(id, nombre, email, telefono),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
+          items:factura_items(*)
+        `)
+        .eq('user_id', userId)
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+      return facturas;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async softDelete(facturaId, userId, supabase) {
+    try {
+      // Obtener la factura para hacer backup del PDF
+      const factura = await this.obtenerPorId(facturaId, userId, supabase);
+      if (!factura) {
+        throw new Error('Factura no encontrada');
+      }
+
+      // Hacer backup del PDF si existe
+      if (factura.user_id && factura.id) {
+        try {
+          // Obtener configuración del negocio para generar nombre de archivo correcto
+          const negocio = await this.obtenerConfiguracionNegocio(userId, supabase);
+          
+          // Generar el nombre de archivo correcto usando la misma lógica que al crear
+          const { generarNombreArchivo } = await import('../services/pdfFacturaService.js');
+          const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
+          const filePath = `${factura.user_id}/${fileName}`;
+          const backupFileName = `${factura.user_id}/backup/${factura.id}_${Date.now()}.pdf`;
+          
+          console.log('💾 Intentando hacer backup de:', filePath);
+          
+          // Copiar archivo a backup (si existe)
+          const { data: fileData, error: fileError } = await supabase.storage
+            .from('facturas')
+            .download(filePath);
+          
+          if (!fileError && fileData) {
+            // Subir a bucket de backup
+            const { error: uploadError } = await supabase.storage
+              .from('facturas-backup')
+              .upload(backupFileName, fileData, {
+                contentType: 'application/pdf'
+              });
+            
+            if (uploadError) {
+              console.error('❌ Error al hacer backup del PDF:', uploadError);
+            } else {
+              console.log('✅ Backup del PDF creado:', backupFileName);
+            }
+          } else {
+            console.log('⚠️ No se encontró archivo para hacer backup:', filePath);
+          }
+        } catch (backupError) {
+          console.error('❌ Error en proceso de backup:', backupError);
+        }
+      }
+
+      // Marcar como eliminada (soft delete)
+      const { data: facturaActualizada, error } = await supabase
+        .from('facturas')
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: userId
+        })
+        .eq('id', facturaId)
+        .eq('user_id', userId)
+        .select(`
+          *,
+          cliente:clientes(id, nombre, email, telefono),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
+          items:factura_items(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      return facturaActualizada;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async hardDelete(facturaId, userId, supabase) {
+    try {
+      // Obtener la factura (incluyendo las eliminadas por soft delete)
+      const { data: factura, error: facturaError } = await supabase
+        .from('facturas')
+        .select(`
+          *,
+          cliente:clientes(id, nombre, email, telefono, direccion),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
+          items:factura_items(*)
+        `)
+        .eq('id', facturaId)
+        .eq('user_id', userId)
+        .single();
+
+      if (facturaError) {
+        throw new Error('Factura no encontrada');
+      }
+
+      if (!factura) {
+        throw new Error('Factura no encontrada');
+      }
+
+      console.log('📋 Estado de la factura:', {
+        id: factura.id,
+        numero_factura: factura.numero_factura,
+        estado: factura.estado,
+        deleted_at: factura.deleted_at,
+        user_id: factura.user_id
+      });
+
+      // Eliminar PDF de Supabase Storage si existe
+      if (factura.user_id && factura.id) {
+        try {
+          // Obtener configuración del negocio para generar nombre de archivo correcto
+          const negocio = await this.obtenerConfiguracionNegocio(userId, supabase);
+          
+          // Generar el nombre de archivo correcto usando la misma lógica que al crear
+          const { generarNombreArchivo } = await import('../services/pdfFacturaService.js');
+          const fileName = generarNombreArchivo(factura, factura.cliente, negocio);
+          const filePath = `${factura.user_id}/${fileName}`;
+          
+          console.log('🗑️ Intentando eliminar archivo:', filePath);
+          
+          const { error: deleteError } = await supabase.storage
+            .from('facturas')
+            .remove([filePath]);
+          
+          if (deleteError) {
+            console.error('❌ Error al eliminar PDF:', deleteError);
+            // No lanzar error para que continúe con la eliminación de la base de datos
+          } else {
+            console.log('✅ PDF eliminado de storage:', filePath);
+          }
+        } catch (storageError) {
+          console.error('❌ Error en eliminación de storage:', storageError);
+          // No lanzar error para que continúe con la eliminación de la base de datos
+        }
+      }
+
+      // Eliminar items de la factura
+      console.log('🗑️ Eliminando items de la factura:', facturaId);
+      const { error: itemsError } = await supabase
+        .from('factura_items')
+        .delete()
+        .eq('factura_id', facturaId);
+
+      if (itemsError) {
+        console.error('❌ Error al eliminar items:', itemsError);
+        throw itemsError;
+      } else {
+        console.log('✅ Items de la factura eliminados');
+      }
+
+      // Eliminar la factura permanentemente
+      console.log('🗑️ Eliminando factura de la base de datos:', facturaId);
+      const { error } = await supabase
+        .from('facturas')
+        .delete()
+        .eq('id', facturaId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('❌ Error al eliminar factura de la base de datos:', error);
+        throw error;
+      } else {
+        console.log('✅ Factura eliminada de la base de datos');
+      }
+      
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async restore(facturaId, userId, supabase) {
+    try {
+      // Restaurar la factura (quitar deleted_at)
+      const { data: facturaRestaurada, error } = await supabase
+        .from('facturas')
+        .update({ 
+          deleted_at: null,
+          deleted_by: null
+        })
+        .eq('id', facturaId)
+        .eq('user_id', userId)
+        .select(`
+          *,
+          cliente:clientes(id, nombre, email, telefono),
+          metodo_pago:metodos_pago(id, nombre, link, descripcion),
+          items:factura_items(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      return facturaRestaurada;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async limpiarFacturasAntiguas(userId, supabase, diasRetencion = 2555) { // 7 años por defecto
+    try {
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() - diasRetencion);
+
+      // Obtener facturas eliminadas más antiguas que el límite
+      const { data: facturasAntiguas, error } = await supabase
+        .from('facturas')
+        .select('id, user_id, deleted_at')
+        .eq('user_id', userId)
+        .not('deleted_at', 'is', null)
+        .lt('deleted_at', fechaLimite.toISOString());
+
+      if (error) throw error;
+
+      let eliminadas = 0;
+      for (const factura of facturasAntiguas) {
+        try {
+          await this.hardDelete(factura.id, userId, supabase);
+          eliminadas++;
+        } catch (deleteError) {
+          console.error(`Error al eliminar factura antigua ${factura.id}:`, deleteError);
+        }
+      }
+
+      return { eliminadas, total: facturasAntiguas.length };
     } catch (error) {
       throw error;
     }

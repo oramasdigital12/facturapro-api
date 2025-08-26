@@ -1,14 +1,21 @@
 import express from 'express';
-import { body } from 'express-validator';
 import {
   crearMensaje,
   listarMensajes,
+  listarMensajesPorModulo,
   obtenerMensaje,
   actualizarMensaje,
   eliminarMensaje,
   generarLinkWhatsApp
 } from '../controllers/mensajeController.js';
 import { authenticateToken } from '../middlewares/auth.js';
+import {
+  crearMensajeValidations,
+  actualizarMensajeValidations,
+  moduloParamValidation,
+  generarLinkWhatsAppValidations,
+  idParamValidation
+} from '../validators/mensajeValidator.js';
 
 const router = express.Router();
 
@@ -19,22 +26,21 @@ const router = express.Router();
  *     Mensaje:
  *       type: object
  *       required:
- *         - cliente_id
- *         - contenido
+ *         - texto
  *       properties:
  *         id:
  *           type: string
  *           description: ID autogenerado del mensaje
- *         cliente_id:
- *           type: string
- *           description: ID del cliente al que se envía el mensaje
- *         contenido:
+ *         texto:
  *           type: string
  *           description: Contenido del mensaje
- *         estado:
+ *         modulo:
  *           type: string
- *           enum: [enviado, pendiente, error]
- *           description: Estado del mensaje
+ *           description: Módulo al que pertenece el mensaje (general, facturas, clientes, ventas, tareas)
+ *           enum: [general, facturas, clientes, ventas, tareas]
+ *         user_id:
+ *           type: string
+ *           description: ID del usuario propietario del mensaje
  *         created_at:
  *           type: string
  *           format: date-time
@@ -55,20 +61,28 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - texto
  *             properties:
  *               texto:
  *                 type: string
+ *                 description: Contenido del mensaje
+ *               modulo:
+ *                 type: string
+ *                 description: Módulo al que pertenece el mensaje
+ *                 enum: [general, facturas, clientes, ventas, tareas]
+ *                 default: general
  *     responses:
  *       201:
- *         description: Mensaje creado
+ *         description: Mensaje creado exitosamente
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: '#/components/schemas/Mensaje'
+ *       400:
+ *         description: Datos de entrada inválidos
  */
-router.post('/', authenticateToken, [
-  body('texto').notEmpty().trim()
-], crearMensaje);
+router.post('/', authenticateToken, crearMensajeValidations, crearMensaje);
 
 /**
  * @swagger
@@ -86,9 +100,39 @@ router.post('/', authenticateToken, [
  *             schema:
  *               type: array
  *               items:
- *                 type: object
+ *                 $ref: '#/components/schemas/Mensaje'
  */
 router.get('/', authenticateToken, listarMensajes);
+
+/**
+ * @swagger
+ * /api/mensajes/modulo/{modulo}:
+ *   get:
+ *     summary: Listar mensajes predeterminados por módulo específico
+ *     tags: [Mensajes]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: modulo
+ *         schema:
+ *           type: string
+ *           enum: [general, facturas, clientes, ventas, tareas]
+ *         required: true
+ *         description: Módulo para filtrar los mensajes
+ *     responses:
+ *       200:
+ *         description: Lista de mensajes del módulo especificado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Mensaje'
+ *       400:
+ *         description: Módulo inválido
+ */
+router.get('/modulo/:modulo', authenticateToken, moduloParamValidation, listarMensajesPorModulo);
 
 /**
  * @swagger
@@ -111,9 +155,13 @@ router.get('/', authenticateToken, listarMensajes);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: '#/components/schemas/Mensaje'
+ *       404:
+ *         description: Mensaje no encontrado
+ *       400:
+ *         description: ID inválido
  */
-router.get('/:id', authenticateToken, obtenerMensaje);
+router.get('/:id', authenticateToken, idParamValidation, obtenerMensaje);
 
 /**
  * @swagger
@@ -136,20 +184,29 @@ router.get('/:id', authenticateToken, obtenerMensaje);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - texto
  *             properties:
  *               texto:
  *                 type: string
+ *                 description: Nuevo contenido del mensaje
+ *               modulo:
+ *                 type: string
+ *                 description: Nuevo módulo del mensaje
+ *                 enum: [general, facturas, clientes, ventas, tareas]
  *     responses:
  *       200:
- *         description: Mensaje actualizado
+ *         description: Mensaje actualizado exitosamente
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: '#/components/schemas/Mensaje'
+ *       404:
+ *         description: Mensaje no encontrado
+ *       400:
+ *         description: Datos de entrada inválidos
  */
-router.put('/:id', authenticateToken, [
-  body('texto').notEmpty().trim()
-], actualizarMensaje);
+router.put('/:id', authenticateToken, idParamValidation, actualizarMensajeValidations, actualizarMensaje);
 
 /**
  * @swagger
@@ -168,13 +225,21 @@ router.put('/:id', authenticateToken, [
  *         description: ID del mensaje
  *     responses:
  *       200:
- *         description: Mensaje eliminado
+ *         description: Mensaje eliminado exitosamente
  *         content:
  *           application/json:
  *             schema:
  *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Mensaje eliminado exitosamente"
+ *       404:
+ *         description: Mensaje no encontrado
+ *       400:
+ *         description: ID inválido
  */
-router.delete('/:id', authenticateToken, eliminarMensaje);
+router.delete('/:id', authenticateToken, idParamValidation, eliminarMensaje);
 
 /**
  * @swagger
@@ -211,14 +276,11 @@ router.delete('/:id', authenticateToken, eliminarMensaje);
  *                 link:
  *                   type: string
  *                   description: URL directa de WhatsApp
+ *       404:
+ *         description: Mensaje no encontrado
+ *       400:
+ *         description: Datos de entrada inválidos
  */
-router.post('/whatsapp/link',
-  authenticateToken,
-  [
-    body('telefono').notEmpty(),
-    body('mensajeId').notEmpty()
-  ],
-  generarLinkWhatsApp
-);
+router.post('/whatsapp/link', authenticateToken, generarLinkWhatsAppValidations, generarLinkWhatsApp);
 
 export default router; 
