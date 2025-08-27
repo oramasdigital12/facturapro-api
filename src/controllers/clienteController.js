@@ -11,7 +11,7 @@ export const crearCliente = async (req, res) => {
         }
 
         const supabase = getSupabaseForUser(req.token);
-        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number } = req.body;
+        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number, proviene } = req.body;
         
         // Convertir "pendiente" a "inactivo" automáticamente
         const categoriaFinal = categoria === 'pendiente' ? 'inactivo' : categoria;
@@ -28,6 +28,7 @@ export const crearCliente = async (req, res) => {
             sexo,
             notas,
             identification_number,
+            proviene,
             user_id: req.user.id
         }, supabase);
 
@@ -79,7 +80,7 @@ export const actualizarCliente = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
         const supabase = getSupabaseForUser(req.token);
-        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number } = req.body;
+        const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number, proviene } = req.body;
         const datosActualizados = {};
         if (nombre !== undefined) datosActualizados.nombre = nombre;
         if (email !== undefined) datosActualizados.email = email;
@@ -95,6 +96,7 @@ export const actualizarCliente = async (req, res) => {
         if (sexo !== undefined) datosActualizados.sexo = sexo;
         if (notas !== undefined) datosActualizados.notas = notas;
         if (identification_number !== undefined) datosActualizados.identification_number = identification_number;
+        if (proviene !== undefined) datosActualizados.proviene = proviene;
         const cliente = await Cliente.actualizar(req.params.id, datosActualizados, req.user.id, supabase);
         if (!cliente) {
             return res.status(404).json({ error: 'Cliente no encontrado' });

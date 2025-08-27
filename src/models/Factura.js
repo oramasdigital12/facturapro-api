@@ -33,6 +33,10 @@ const validarDatosFactura = (datos, esActualizacion = false) => {
     errores.push('El balance restante debe ser un número válido mayor o igual a 0');
   }
   
+  if (datos.descuento !== undefined && (isNaN(datos.descuento) || datos.descuento < 0)) {
+    errores.push('El descuento debe ser un número válido mayor o igual a 0');
+  }
+  
   return errores;
 };
 
@@ -157,9 +161,19 @@ class Factura {
       // Obtener configuración del negocio para valores por defecto
       const configNegocio = await this.obtenerConfiguracionNegocio(datos.user_id, supabase);
       
+      // Calcular el monto del descuento si se proporciona un porcentaje
+      let montoDescuento = datos.descuento;
+      if (datos.descuento && datos.subtotal) {
+        // Si el descuento es menor a 100, asumir que es un porcentaje
+        if (datos.descuento <= 100) {
+          montoDescuento = (datos.subtotal * datos.descuento) / 100;
+        }
+      }
+
       // Preparar datos de la factura
       const datosFactura = {
         ...datos,
+        descuento: montoDescuento, // Usar el monto calculado
         numero_factura: numeroFactura,
         fecha_factura: datos.fecha_factura || new Date().toISOString().split('T')[0],
         fecha_vencimiento: datos.fecha_vencimiento || null, // Valor por defecto para campos opcionales
@@ -297,6 +311,14 @@ class Factura {
         const erroresItems = validarItemsFactura(items);
         if (erroresItems.length > 0) {
           throw new Error('Errores en items: ' + erroresItems.join(', '));
+        }
+      }
+
+      // Calcular el monto del descuento si se proporciona un porcentaje
+      if (datos.descuento !== undefined && datos.subtotal) {
+        // Si el descuento es menor a 100, asumir que es un porcentaje
+        if (datos.descuento <= 100) {
+          datos.descuento = (datos.subtotal * datos.descuento) / 100;
         }
       }
 

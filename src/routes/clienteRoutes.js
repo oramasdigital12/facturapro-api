@@ -57,6 +57,9 @@ const router = express.Router();
  *         identification_number:
  *           type: string
  *           description: Número de identificación del cliente (letras y números)
+ *         proviene:
+ *           type: string
+ *           description: Origen del cliente (ej: Facebook, WhatsApp, Meta Ads, etc.)
  */
 
 /**

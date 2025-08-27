@@ -23,6 +23,10 @@ const validarDatosCliente = (datos) => {
     errores.push('La fecha de vencimiento no es válida');
   }
   
+  if (typeof datos.proviene === 'string' && datos.proviene && datos.proviene.trim().length > 100) {
+    errores.push('El campo proviene no puede exceder 100 caracteres');
+  }
+  
   return errores;
 };
 

@@ -65,6 +65,9 @@ const router = express.Router();
  *                 balance_restante:
  *                   type: number
  *                   description: Balance restante por pagar
+ *                 descuento:
+ *                   type: number
+ *                   description: Monto de descuento aplicado
  *                 nota:
  *                   type: string
  *                   description: Nota adicional de la factura

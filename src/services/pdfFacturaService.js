@@ -334,7 +334,7 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
           <table class="items-table">
             <thead>
               <tr>
-                <th>ITEM/SERVICE</th>
+                <th>PRODUCT/SERVICE</th>
                 <th>DESCRIPTION</th>
                 <th>QTY/HRS</th>
                 <th>RATE</th>
@@ -344,7 +344,7 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
             <tbody>
               ${factura.items && factura.items.length > 0 ? factura.items.map(item => `
                 <tr>
-                  <td>${item.categoria || 'Service'}</td>
+                  <td>${item.categoria || 'Product/Service'}</td>
                   <td>${item.descripcion || 'Description'}</td>
                   <td>${item.cantidad || '1'}</td>
                   <td>$${Number(item.precio_unitario || 0).toFixed(2)}</td>
@@ -381,6 +381,12 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
                 <span class="total-label">Subtotal:</span>
                 <span class="total-value">$${Number(factura.subtotal || 0).toFixed(2)}</span>
               </div>
+                                                           ${factura.descuento && factura.descuento > 0 ? `
+                 <div class="total-row">
+                   <span class="total-label">Descuento (${Math.round((factura.descuento / factura.subtotal) * 100)}%):</span>
+                   <span class="total-value" style="color: #dc3545;">-$${Number(factura.descuento || 0).toFixed(2)}</span>
+                 </div>
+                 ` : ''}
               <div class="total-row">
                 <span class="total-label">Tax:</span>
                 <span class="total-value">$${Number(factura.impuesto || 0).toFixed(2)}</span>

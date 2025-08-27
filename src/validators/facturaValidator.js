@@ -57,6 +57,11 @@ export const crearFacturaValidator = [
     .isFloat({ min: 0 })
     .withMessage('El balance restante debe ser un número mayor o igual a 0'),
   
+  body('descuento')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('El descuento debe ser un número mayor o igual a 0'),
+  
   body('nota')
     .optional()
     .isString()
@@ -172,6 +177,11 @@ export const actualizarFacturaValidator = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('El balance restante debe ser un número mayor o igual a 0'),
+  
+  body('descuento')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('El descuento debe ser un número mayor o igual a 0'),
   
   body('nota')
     .optional()

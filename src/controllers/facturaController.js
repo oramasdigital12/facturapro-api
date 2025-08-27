@@ -28,6 +28,7 @@ export const crearFactura = async (req, res) => {
             total, 
             deposito, 
             balance_restante, 
+            descuento,
             nota, 
             terminos, 
             logo_personalizado_url, 
@@ -47,6 +48,7 @@ export const crearFactura = async (req, res) => {
             total,
             deposito,
             balance_restante,
+            descuento,
             nota: nota && nota.trim() !== '' ? nota : '',
             terminos: terminos && terminos.trim() !== '' ? terminos : '',
             logo_personalizado_url,
@@ -185,6 +187,7 @@ export const actualizarFactura = async (req, res) => {
             total, 
             deposito, 
             balance_restante, 
+            descuento,
             nota, 
             terminos, 
             logo_personalizado_url, 
@@ -203,6 +206,7 @@ export const actualizarFactura = async (req, res) => {
         if (total !== undefined) datosActualizados.total = total;
         if (deposito !== undefined) datosActualizados.deposito = deposito;
         if (balance_restante !== undefined) datosActualizados.balance_restante = balance_restante;
+        if (descuento !== undefined) datosActualizados.descuento = descuento;
         if (nota !== undefined) datosActualizados.nota = nota && nota.trim() !== '' ? nota : '';
         if (terminos !== undefined) datosActualizados.terminos = terminos && terminos.trim() !== '' ? terminos : '';
         if (logo_personalizado_url !== undefined) datosActualizados.logo_personalizado_url = logo_personalizado_url;
@@ -501,6 +505,7 @@ export const obtenerFacturaPublica = async (req, res) => {
             total: factura.total,
             deposito: factura.deposito,
             balance_restante: factura.balance_restante,
+            descuento: factura.descuento,
             nota: factura.nota,
             terminos: factura.terminos,
             logo_personalizado_url: factura.logo_personalizado_url,

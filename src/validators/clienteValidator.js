@@ -65,7 +65,13 @@ export const crearClienteValidator = [
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Las notas no pueden exceder 500 caracteres')
+    .withMessage('Las notas no pueden exceder 500 caracteres'),
+  
+  body('proviene')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('El campo proviene no puede exceder 100 caracteres')
 ];
 
 /**
@@ -132,5 +138,11 @@ export const actualizarClienteValidator = [
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Las notas no pueden exceder 500 caracteres')
+    .withMessage('Las notas no pueden exceder 500 caracteres'),
+  
+  body('proviene')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('El campo proviene no puede exceder 100 caracteres')
 ]; 
