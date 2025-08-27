@@ -2,7 +2,7 @@ import express from 'express';
 import * as facturaController from '../controllers/facturaController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { validateRequest, validateUUID } from '../middlewares/validation.js';
-import { createLimiter, searchLimiter } from '../middlewares/rateLimiter.js';
+import { createLimiter, deleteLimiter, uploadLimiter, bulkLimiter } from '../middlewares/rateLimiter.js';
 import { crearFacturaValidator, actualizarFacturaValidator } from '../validators/facturaValidator.js';
 
 const router = express.Router();
@@ -245,7 +245,7 @@ const router = express.Router();
  */
 router.post('/',
   authenticateToken,
-  createLimiter,
+  createLimiter, // ✅ Límite en creación de facturas
   crearFacturaValidator,
   validateRequest,
   facturaController.crearFactura
@@ -295,7 +295,7 @@ router.post('/',
  */
 router.get('/', 
   authenticateToken, 
-  searchLimiter,
+  // ✅ SIN LÍMITES para consultas de facturas
   facturaController.obtenerFacturas
 );
 
@@ -319,6 +319,7 @@ router.get('/',
  */
 router.get('/eliminadas', 
   authenticateToken, 
+  // ✅ SIN LÍMITES para consultas de facturas eliminadas
   facturaController.obtenerFacturasEliminadas
 );
 
@@ -369,6 +370,7 @@ router.get('/eliminadas',
  */
 router.post('/limpiar-antiguas', 
   authenticateToken, 
+  bulkLimiter, // ✅ Límite en operaciones masivas
   facturaController.limpiarFacturasAntiguas
 );
 
@@ -487,7 +489,7 @@ router.get('/:id',
  */
 router.put('/:id',
   authenticateToken,
-  createLimiter,
+  createLimiter, // ✅ Límite en actualización de facturas
   actualizarFacturaValidator,
   validateRequest,
   facturaController.actualizarFactura
@@ -598,7 +600,7 @@ router.get('/:id/pdf/public',
  */
 router.post('/:id/regenerate-pdf',
   authenticateToken,
-  createLimiter,
+  uploadLimiter, // ✅ Límite en regeneración de PDFs
   validateUUID('id'),
   facturaController.regenerarPdfFactura
 );
@@ -796,7 +798,7 @@ router.post('/:id/restore',
  */
 router.delete('/:id',
   authenticateToken,
-  createLimiter,
+  deleteLimiter,
   validateUUID('id'),
   facturaController.eliminarFactura
 );

@@ -2,7 +2,7 @@ import express from 'express';
 import * as clienteController from '../controllers/clienteController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { validateRequest, validateUUID } from '../middlewares/validation.js';
-import { createLimiter, searchLimiter } from '../middlewares/rateLimiter.js';
+import { createLimiter, deleteLimiter, bulkLimiter } from '../middlewares/rateLimiter.js';
 import { crearClienteValidator, actualizarClienteValidator } from '../validators/clienteValidator.js';
 
 const router = express.Router();
@@ -136,7 +136,6 @@ router.get('/', authenticateToken, clienteController.obtenerClientes);
  */
 router.get('/buscar', 
   authenticateToken, 
-  searchLimiter,
   clienteController.buscarClientes
 );
 

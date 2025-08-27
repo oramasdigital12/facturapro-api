@@ -7,8 +7,17 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 import logger from './config/logger.js';
 
-// Importar middlewares de seguridad
-import { apiLimiter, authLimiter, createLimiter, searchLimiter } from './middlewares/rateLimiter.js';
+// Importar middlewares de rate limiting
+import { 
+  authLimiter, 
+  strictAuthLimiter, 
+  createLimiter, 
+  deleteLimiter, 
+  searchLimiter, 
+  bulkLimiter, 
+  uploadLimiter, 
+  systemLimiter 
+} from './middlewares/rateLimiter.js';
 import { sanitizeInput } from './middlewares/validation.js';
 
 // Importar controladores de health check
@@ -112,15 +121,15 @@ app.get('/', (req, res) => {
 
 // Rutas de la API con rate limiting específico
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/clientes', apiLimiter, clienteRoutes); // Limita solo creación/actualización masiva
-app.use('/api/mensajes', apiLimiter, mensajeRoutes);
-app.use('/api/ventas', apiLimiter, ventaRoutes);
-app.use('/api/facturas', apiLimiter, facturaRoutes);
-app.use('/api/negocio-config', apiLimiter, negocioConfigRoutes);
-app.use('/api/tareas', apiLimiter, tareaRoutes);
-app.use('/api/categorias-negocio', apiLimiter, categoriaNegocioRoutes);
-app.use('/api/servicios-negocio', apiLimiter, servicioNegocioRoutes);
-app.use('/api/metodos-pago', apiLimiter, metodoPagoRoutes);
+app.use('/api/clientes', clienteRoutes);
+app.use('/api/mensajes', mensajeRoutes);
+app.use('/api/ventas', ventaRoutes);
+app.use('/api/facturas', facturaRoutes);
+app.use('/api/negocio-config', negocioConfigRoutes);
+app.use('/api/tareas', tareaRoutes);
+app.use('/api/categorias-negocio', categoriaNegocioRoutes);
+app.use('/api/servicios-negocio', servicioNegocioRoutes);
+app.use('/api/metodos-pago', metodoPagoRoutes);
 
 // Rutas públicas (sin autenticación)
 app.use('/factura', facturaPublicaRoutes);

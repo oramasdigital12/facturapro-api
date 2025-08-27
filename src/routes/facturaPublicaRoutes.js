@@ -1,7 +1,6 @@
 import express from 'express';
 import * as facturaController from '../controllers/facturaController.js';
 import { validateUUID } from '../middlewares/validation.js';
-import { searchLimiter } from '../middlewares/rateLimiter.js';
 import { createClient } from '@supabase/supabase-js';
 import Factura from '../models/Factura.js';
 
@@ -116,7 +115,6 @@ const router = express.Router();
  *         description: Factura no encontrada
  */
 router.get('/:uuid',
-  searchLimiter,
   validateUUID('uuid'),
   facturaController.obtenerFacturaPublica
 );
