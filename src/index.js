@@ -62,6 +62,7 @@ app.use(cors({
     'https://gestionaexpress.netlify.app',
     'https://gestionarapido.netlify.app',
     'https://venderapido.netlify.app',
+    'https://leadspropr.netlify.app',
     'http://localhost:3000',
     'http://localhost:5173'
   ],
