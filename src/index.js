@@ -64,6 +64,7 @@ app.use(cors({
     'https://venderapido.netlify.app',
     'https://leadspropr.netlify.app',
     'http://localhost:3000',
+    'https://tuguiadigitalleadspro.netlify.app', 
     'http://localhost:5173'
   ],
   credentials: true,
