@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import Cliente from '../models/Cliente.js';
 import { getSupabaseForUser } from '../config/supabase.js';
+import EmailService from '../services/emailService.js';
 
 export const crearCliente = async (req, res) => {
     try {
@@ -32,6 +33,29 @@ export const crearCliente = async (req, res) => {
             proviene,
             user_id: req.user.id
         }, supabase);
+
+        // Si el cliente es un lead, enviar notificación por email
+        if (categoriaFinal === 'lead') {
+            try {
+                // Obtener email del usuario desde negocio_config
+                const { data: negocioConfig, error: configError } = await supabase
+                    .from('negocio_config')
+                    .select('email')
+                    .eq('user_id', req.user.id)
+                    .single();
+
+                if (!configError && negocioConfig && negocioConfig.email) {
+                    const emailService = new EmailService();
+                    await emailService.sendNewLeadNotification(cliente, negocioConfig.email);
+                    console.log('✅ Notificación de lead enviada a:', negocioConfig.email);
+                } else {
+                    console.log('⚠️ No se pudo obtener email del usuario para notificación de lead');
+                }
+            } catch (emailError) {
+                console.error('❌ Error al enviar notificación de lead:', emailError);
+                // No fallar la creación del cliente si falla el email
+            }
+        }
 
         res.status(201).json(cliente);
     } catch (error) {
