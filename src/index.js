@@ -58,20 +58,29 @@ app.use(helmet({
   }
 }));
 
+// Configurar CORS usando variable de entorno o lista por defecto
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [
+      'https://gestionapro.netlify.app',
+      'https://vendedorpro.app',
+      'https://facturapro.app',
+      'https://gestionaexpress.netlify.app',
+      'https://gestionarapido.netlify.app',
+      'https://venderapido.netlify.app',
+      'https://leadspropr.netlify.app',
+      'http://localhost:3000',
+      'https://tuguiadigitalleadspro.netlify.app', 
+      'http://localhost:5173',
+      'http://localhost:5174'
+    ];
+
+// Log de dominios permitidos
+console.log('🌐 Dominios CORS permitidos:');
+allowedOrigins.forEach(origin => console.log(`   ✅ ${origin}`));
+
 app.use(cors({
-  origin: [
-    'https://gestionapro.netlify.app',
-    'https://vendedorpro.app',
-    'https://facturapro.app',
-    'https://gestionaexpress.netlify.app',
-    'https://gestionarapido.netlify.app',
-    'https://venderapido.netlify.app',
-    'https://leadspropr.netlify.app',
-    'http://localhost:3000',
-    'https://tuguiadigitalleadspro.netlify.app', 
-    'http://localhost:5173',
-     'http://localhost:5174'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -227,7 +236,29 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+// Manejo de señales para Railway
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM recibido, cerrando servidor gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT recibido, cerrando servidor gracefully...');
+  process.exit(0);
+});
+
+// Manejo de errores no capturados
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+const server = app.listen(PORT, () => {
   logger.info(`🚀 Servidor iniciado correctamente`, {
     port: PORT,
     environment: process.env.NODE_ENV || 'development',
@@ -261,4 +292,22 @@ app.listen(PORT, () => {
   console.log('   PUT    /api/metodos-pago/{id}');
   console.log('   DELETE /api/metodos-pago/{id}');
   console.log('   POST   /api/metodos-pago/orden');
-}); 
+});
+
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+  logger.info(`${signal} recibido, cerrando servidor...`);
+  server.close(() => {
+    logger.info('Servidor cerrado');
+    process.exit(0);
+  });
+  
+  // Forzar cierre después de 10 segundos
+  setTimeout(() => {
+    logger.error('Forzando cierre del servidor');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); 
