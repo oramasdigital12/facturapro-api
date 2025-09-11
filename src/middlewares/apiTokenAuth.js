@@ -67,7 +67,7 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
         // Obtener información del usuario usando la misma instancia de supabase
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('id, email, nombre, negocio_id')
+            .select('id, email, full_name')
             .eq('id', tokenData.user_id)
             .single();
 
@@ -83,8 +83,8 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
         req.user = {
             id: user.id,
             email: user.email,
-            nombre: user.nombre,
-            negocio_id: user.negocio_id
+            nombre: user.full_name,
+            negocio_id: null // No hay business_id en la tabla users
         };
         
         req.apiToken = {
