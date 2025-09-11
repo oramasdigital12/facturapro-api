@@ -35,17 +35,26 @@ export const authenticateApiToken = async (req, res, next) => {
 
 const authenticateWithApiToken = async (apiToken, req, res, next) => {
     try {
+        console.log('🔑 [DEBUG] Verificando API token:', apiToken.substring(0, 10) + '...');
+        console.log('🔑 [DEBUG] Longitud del token:', apiToken.length);
+        
         // Crear una instancia de supabase para verificar el token
         const supabase = getSupabaseForUser(null);
         
+        console.log('🔑 [DEBUG] Supabase configurado, buscando token...');
         const tokenData = await ApiToken.obtenerPorToken(apiToken, supabase);
         
+        console.log('🔑 [DEBUG] Resultado de búsqueda:', tokenData ? 'Token encontrado' : 'Token NO encontrado');
+        
         if (!tokenData) {
+            console.log('❌ [DEBUG] Token no encontrado o expirado');
             return res.status(401).json({
                 success: false,
                 message: 'API token inválido o expirado'
             });
         }
+        
+        console.log('✅ [DEBUG] Token válido, continuando...');
 
         // Actualizar último uso
         await ApiToken.actualizarUltimoUso(tokenData.id, supabase);

@@ -81,6 +81,8 @@ export default class ApiToken {
 
   static async obtenerPorToken(token, supabase) {
     try {
+      console.log('🔍 [MODEL] Buscando token en BD:', token.substring(0, 10) + '...');
+      
       const { data: apiToken, error } = await supabase
         .from('api_tokens')
         .select('*')
@@ -88,10 +90,17 @@ export default class ApiToken {
         .eq('activo', true)
         .single();
 
-      if (error) throw error;
+      console.log('🔍 [MODEL] Error de Supabase:', error);
+      console.log('🔍 [MODEL] Token encontrado:', apiToken ? 'Sí' : 'No');
+      
+      if (error) {
+        console.log('❌ [MODEL] Error en consulta:', error.message);
+        throw error;
+      }
       
       // Verificar si el token ha expirado
       if (apiToken && new Date(apiToken.fecha_expiracion) < new Date()) {
+        console.log('⏰ [MODEL] Token expirado, marcando como inactivo');
         // Marcar como inactivo
         await supabase
           .from('api_tokens')
@@ -101,8 +110,10 @@ export default class ApiToken {
         return null;
       }
 
+      console.log('✅ [MODEL] Token válido encontrado');
       return apiToken;
     } catch (error) {
+      console.log('❌ [MODEL] Error general:', error.message);
       return null;
     }
   }
