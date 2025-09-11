@@ -39,6 +39,9 @@ import apiTokenRoutes from './routes/apiTokenRoutes.js';
 
 const app = express();
 
+// Configurar trust proxy para Railway y otros proxies
+app.set('trust proxy', 1);
+
 // Middlewares de seguridad mejorados
 app.use(helmet({
   contentSecurityPolicy: {

@@ -13,6 +13,7 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiados intentos de login, intenta más tarde",
@@ -35,6 +36,7 @@ export const strictAuthLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiados intentos, intenta más tarde",
@@ -56,6 +58,7 @@ export const createLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiadas creaciones, intenta más tarde",
@@ -77,6 +80,7 @@ export const deleteLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiadas eliminaciones, intenta más tarde",
@@ -98,6 +102,7 @@ export const searchLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiadas búsquedas, intenta más tarde",
@@ -119,6 +124,7 @@ export const bulkLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiadas operaciones masivas, intenta más tarde",
@@ -140,6 +146,7 @@ export const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiados archivos subidos, intenta más tarde",
@@ -161,6 +168,7 @@ export const systemLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Confiar en proxies como Railway
   handler: (req, res) => {
     res.status(429).json({
       error: "Demasiadas operaciones del sistema, intenta más tarde",
