@@ -38,6 +38,7 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
     try {
         console.log('🔑 [DEBUG] Verificando API token:', apiToken.substring(0, 10) + '...');
         console.log('🔑 [DEBUG] Longitud del token:', apiToken.length);
+        console.log('🔑 [DEBUG] Token completo:', apiToken);
         
         // Crear una instancia de supabase para verificar el token (sin JWT)
         const supabase = createClient(
