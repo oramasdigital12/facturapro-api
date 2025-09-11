@@ -4,8 +4,8 @@ class EmailService {
     constructor() {
         this.apiKey = process.env.BREVO_API_KEY;
         this.baseURL = 'https://api.brevo.com/v3';
-        this.fromEmail = process.env.BREVO_FROM_EMAIL || 'noreply@tu-dominio.com';
-        this.fromName = process.env.BREVO_FROM_NAME || 'Tu Sistema CRM';
+        this.fromEmail = process.env.BREVO_FROM_EMAIL || 'tuguiadigital12@gmail.com';
+        this.fromName = process.env.BREVO_FROM_NAME || 'CRMPRO';
         
         if (!this.apiKey) {
             console.warn('⚠️ BREVO_API_KEY no configurada - Servicio de email deshabilitado');
