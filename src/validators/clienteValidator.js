@@ -25,8 +25,8 @@ export const crearClienteValidator = [
   
   body('categoria')
     .optional()
-    .isIn(['activo', 'inactivo'])
-    .withMessage('La categoría debe ser: activo o inactivo'),
+    .isIn(['activo', 'inactivo', 'lead'])
+    .withMessage('La categoría debe ser: activo, inactivo o lead'),
   
   body('fecha_nacimiento')
     .optional({ nullable: true })
@@ -98,8 +98,8 @@ export const actualizarClienteValidator = [
   
   body('categoria')
     .optional()
-    .isIn(['activo', 'inactivo'])
-    .withMessage('La categoría debe ser: activo o inactivo'),
+    .isIn(['activo', 'inactivo', 'lead'])
+    .withMessage('La categoría debe ser: activo, inactivo o lead'),
   
   body('fecha_nacimiento')
     .optional({ nullable: true })
