@@ -8,8 +8,10 @@ class EmailService {
         this.fromName = process.env.BREVO_FROM_NAME || 'Tu Sistema CRM';
         
         if (!this.apiKey) {
-            console.error('❌ BREVO_API_KEY no configurada');
-            throw new Error('BREVO_API_KEY es requerida');
+            console.warn('⚠️ BREVO_API_KEY no configurada - Servicio de email deshabilitado');
+            this.disabled = true;
+        } else {
+            this.disabled = false;
         }
     }
 
@@ -25,6 +27,14 @@ class EmailService {
      * @returns {Promise<Object>} Respuesta de la API
      */
     async sendEmail(emailData) {
+        if (this.disabled) {
+            console.warn('⚠️ Servicio de email deshabilitado - BREVO_API_KEY no configurada');
+            return {
+                success: false,
+                error: 'Servicio de email deshabilitado - BREVO_API_KEY no configurada'
+            };
+        }
+
         try {
             const payload = {
                 sender: {
@@ -237,6 +247,14 @@ class EmailService {
      * @returns {Promise<Object>} Estadísticas de la cuenta
      */
     async getAccountStats() {
+        if (this.disabled) {
+            console.warn('⚠️ Servicio de email deshabilitado - BREVO_API_KEY no configurada');
+            return {
+                success: false,
+                error: 'Servicio de email deshabilitado - BREVO_API_KEY no configurada'
+            };
+        }
+
         try {
             const response = await axios.get(`${this.baseURL}/account`, {
                 headers: {
