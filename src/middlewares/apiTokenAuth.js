@@ -94,8 +94,13 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
             fecha_expiracion: tokenData.fecha_expiracion
         };
 
-        // Para API tokens, usar el cliente de supabase sin autenticación de usuario
-        req.supabase = supabase;
+        // Para API tokens, usar el SERVICE ROLE KEY que bypassa RLS
+        const serviceRoleSupabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        
+        req.supabase = serviceRoleSupabase;
         req.token = apiToken;
 
         next();

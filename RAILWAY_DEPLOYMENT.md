@@ -12,6 +12,8 @@ SUPABASE_ANON_KEY=tu_anon_key_de_supabase
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_de_supabase
 ```
 
+**⚠️ IMPORTANTE**: `SUPABASE_SERVICE_ROLE_KEY` es **REQUERIDA** para que los API tokens funcionen correctamente. Esta clave bypassa las políticas RLS.
+
 ### JWT
 
 ```
