@@ -10,7 +10,8 @@ export const crearCliente = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number, proviene } = req.body;
         
         // Convertir "pendiente" a "inactivo" automáticamente
@@ -44,7 +45,8 @@ export const crearCliente = async (req, res) => {
 
 export const obtenerClientes = async (req, res) => {
     try {
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const clientes = await Cliente.obtenerTodos(req.user.id, supabase);
         res.json(clientes);
     } catch (error) {
@@ -58,7 +60,8 @@ export const obtenerClientes = async (req, res) => {
 
 export const obtenerCliente = async (req, res) => {
     try {
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const cliente = await Cliente.obtenerPorId(req.params.id, req.user.id, supabase);
         if (!cliente) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
@@ -79,7 +82,8 @@ export const actualizarCliente = async (req, res) => {
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const { nombre, email, telefono, categoria, fecha_nacimiento, fecha_vencimiento, fecha_inicio, direccion, sexo, notas, identification_number, proviene } = req.body;
         const datosActualizados = {};
         if (nombre !== undefined) datosActualizados.nombre = nombre;
@@ -113,7 +117,8 @@ export const actualizarCliente = async (req, res) => {
 
 export const eliminarCliente = async (req, res) => {
     try {
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const eliminado = await Cliente.eliminar(req.params.id, req.user.id, supabase);
         if (!eliminado) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
@@ -130,7 +135,8 @@ export const eliminarCliente = async (req, res) => {
 
 export const obtenerClientesPorCategoria = async (req, res) => {
     try {
-        const supabase = getSupabaseForUser(req.token);
+        // Usar la instancia de Supabase correcta según el tipo de autenticación
+        const supabase = req.supabase || getSupabaseForUser(req.token);
         const clientes = await Cliente.obtenerPorCategoria(req.params.categoria, req.user.id, supabase);
         res.json(clientes);
     } catch (error) {
