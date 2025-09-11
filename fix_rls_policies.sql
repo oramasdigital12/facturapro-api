@@ -12,6 +12,7 @@ FROM pg_policies
 WHERE tablename = 'clientes';
 
 -- Eliminar las políticas existentes de la tabla clientes
+DROP POLICY IF EXISTS "Solo mis clientes" ON clientes;
 DROP POLICY IF EXISTS "Users can view their own clients" ON clientes;
 DROP POLICY IF EXISTS "Users can create their own clients" ON clientes;
 DROP POLICY IF EXISTS "Users can update their own clients" ON clientes;
@@ -20,27 +21,10 @@ DROP POLICY IF EXISTS "Users can delete their own clients" ON clientes;
 -- Crear políticas más permisivas que permitan operaciones cuando auth.uid() es NULL
 -- Esto permitirá que el SERVICE ROLE KEY funcione correctamente
 
--- Política para SELECT: permitir si es el usuario autenticado O si no hay usuario autenticado (SERVICE ROLE)
-CREATE POLICY "Users can view their own clients" ON clientes
-    FOR SELECT USING (
-        auth.uid() = user_id OR auth.uid() IS NULL
-    );
-
--- Política para INSERT: permitir si es el usuario autenticado O si no hay usuario autenticado (SERVICE ROLE)
-CREATE POLICY "Users can create their own clients" ON clientes
-    FOR INSERT WITH CHECK (
-        auth.uid() = user_id OR auth.uid() IS NULL
-    );
-
--- Política para UPDATE: permitir si es el usuario autenticado O si no hay usuario autenticado (SERVICE ROLE)
-CREATE POLICY "Users can update their own clients" ON clientes
-    FOR UPDATE USING (
-        auth.uid() = user_id OR auth.uid() IS NULL
-    );
-
--- Política para DELETE: permitir si es el usuario autenticado O si no hay usuario autenticado (SERVICE ROLE)
-CREATE POLICY "Users can delete their own clients" ON clientes
-    FOR DELETE USING (
+-- Crear una política unificada que reemplace "Solo mis clientes" 
+-- pero que permita tanto usuarios autenticados como SERVICE ROLE (API tokens)
+CREATE POLICY "Solo mis clientes" ON clientes
+    FOR ALL USING (
         auth.uid() = user_id OR auth.uid() IS NULL
     );
 
