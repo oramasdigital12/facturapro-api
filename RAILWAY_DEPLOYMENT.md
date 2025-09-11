@@ -27,6 +27,16 @@ NODE_ENV=production
 LOG_LEVEL=info
 ```
 
+### Brevo (Email)
+
+```
+BREVO_API_KEY=tu_brevo_api_key_aqui
+BREVO_FROM_EMAIL=noreply@tu-dominio.com
+BREVO_FROM_NAME=Tu Sistema CRM
+```
+
+**⚠️ IMPORTANTE**: `BREVO_API_KEY` es **REQUERIDA** para el servicio de email. Límite: 300 envíos/día (cuenta gratuita).
+
 ### CORS (Importante para Funnels)
 
 ```

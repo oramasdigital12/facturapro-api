@@ -36,6 +36,7 @@ import facturaRoutes from './routes/facturaRoutes.js';
 import facturaPublicaRoutes from './routes/facturaPublicaRoutes.js';
 import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
 import apiTokenRoutes from './routes/apiTokenRoutes.js';
+import emailRoutes from './routes/emailRoutes.js';
 
 const app = express();
 
@@ -147,6 +148,7 @@ app.use('/api/tareas', tareaRoutes);
 app.use('/api/categorias-negocio', categoriaNegocioRoutes);
 app.use('/api/servicios-negocio', servicioNegocioRoutes);
 app.use('/api/metodos-pago', metodoPagoRoutes);
+app.use('/api/email', emailRoutes);
 
 // Rutas públicas (sin autenticación)
 app.use('/factura', facturaPublicaRoutes);
@@ -292,6 +294,11 @@ const server = app.listen(PORT, () => {
   console.log('   PUT    /api/metodos-pago/{id}');
   console.log('   DELETE /api/metodos-pago/{id}');
   console.log('   POST   /api/metodos-pago/orden');
+  console.log('   GET    /api/email/test');
+  console.log('   POST   /api/email/custom');
+  console.log('   POST   /api/email/welcome');
+  console.log('   POST   /api/email/invoice');
+  console.log('   POST   /api/email/reminder');
 });
 
 // Graceful shutdown
