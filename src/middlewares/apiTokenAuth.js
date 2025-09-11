@@ -1,5 +1,6 @@
 import ApiToken from '../models/ApiToken.js';
 import { getSupabaseForUser } from '../config/supabase.js';
+import { createClient } from '@supabase/supabase-js';
 
 export const authenticateApiToken = async (req, res, next) => {
     try {
@@ -38,8 +39,11 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
         console.log('🔑 [DEBUG] Verificando API token:', apiToken.substring(0, 10) + '...');
         console.log('🔑 [DEBUG] Longitud del token:', apiToken.length);
         
-        // Crear una instancia de supabase para verificar el token
-        const supabase = getSupabaseForUser(null);
+        // Crear una instancia de supabase para verificar el token (sin JWT)
+        const supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_ANON_KEY
+        );
         
         console.log('🔑 [DEBUG] Supabase configurado, buscando token...');
         const tokenData = await ApiToken.obtenerPorToken(apiToken, supabase);
@@ -59,7 +63,7 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
         // Actualizar último uso
         await ApiToken.actualizarUltimoUso(tokenData.id, supabase);
 
-        // Obtener información del usuario
+        // Obtener información del usuario usando la misma instancia de supabase
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('id, email, nombre, negocio_id')
@@ -67,6 +71,7 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
             .single();
 
         if (userError || !user) {
+            console.log('❌ [DEBUG] Usuario no encontrado:', userError);
             return res.status(401).json({
                 success: false,
                 message: 'Usuario no encontrado'
