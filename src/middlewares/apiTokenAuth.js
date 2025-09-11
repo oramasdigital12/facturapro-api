@@ -94,8 +94,8 @@ const authenticateWithApiToken = async (apiToken, req, res, next) => {
             fecha_expiracion: tokenData.fecha_expiracion
         };
 
-        // Crear instancia de supabase para el usuario
-        req.supabase = getSupabaseForUser(null);
+        // Para API tokens, usar el cliente de supabase sin autenticación de usuario
+        req.supabase = supabase;
         req.token = apiToken;
 
         next();

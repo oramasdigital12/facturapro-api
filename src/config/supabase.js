@@ -10,6 +10,21 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Faltan las variables de entorno de Supabase');
 }
 
+// Validar formato del JWT
+const validateJWTFormat = (token) => {
+  if (!token) return false;
+  const parts = token.split('.');
+  return parts.length === 3;
+};
+
+if (!validateJWTFormat(supabaseKey)) {
+  console.error('❌ SUPABASE_ANON_KEY no tiene formato JWT válido');
+  console.error('   Formato esperado: header.payload.signature');
+  console.error('   Longitud actual:', supabaseKey.length);
+  console.error('   Primeros 20 caracteres:', supabaseKey.substring(0, 20) + '...');
+  throw new Error('SUPABASE_ANON_KEY no tiene formato JWT válido');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const getSupabaseForUser = (token) => {
