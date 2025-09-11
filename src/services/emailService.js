@@ -4,7 +4,7 @@ class EmailService {
     constructor() {
         this.apiKey = process.env.BREVO_API_KEY;
         this.baseURL = 'https://api.brevo.com/v3';
-        this.fromEmail = process.env.BREVO_FROM_EMAIL || 'tuguiadigital12@gmail.com';
+        this.fromEmail = process.env.BREVO_FROM_EMAIL || 'boramas12@gmail.com';
         this.fromName = process.env.BREVO_FROM_NAME || 'CRMPRO';
         
         if (!this.apiKey) {
