@@ -35,6 +35,7 @@ import servicioNegocioRoutes from './routes/servicioNegocioRoutes.js';
 import facturaRoutes from './routes/facturaRoutes.js';
 import facturaPublicaRoutes from './routes/facturaPublicaRoutes.js';
 import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
+import apiTokenRoutes from './routes/apiTokenRoutes.js';
 
 const app = express();
 
@@ -65,7 +66,8 @@ app.use(cors({
     'https://leadspropr.netlify.app',
     'http://localhost:3000',
     'https://tuguiadigitalleadspro.netlify.app', 
-    'http://localhost:5173'
+    'http://localhost:5173',
+     'http://localhost:5174'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -123,6 +125,7 @@ app.get('/', (req, res) => {
 
 // Rutas de la API con rate limiting específico
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth/api-tokens', apiTokenRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use('/api/mensajes', mensajeRoutes);
 app.use('/api/ventas', ventaRoutes);
