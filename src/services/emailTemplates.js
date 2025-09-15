@@ -247,7 +247,7 @@ export const emailTemplates = {
      * Plantilla de notificación de nuevo lead
      */
     newLeadNotification: (cliente, userEmail) => ({
-        subject: `🔥 Nuevo Lead: ${cliente.nombre}`,
+        subject: `[LeadsPro] 🔥 Nuevo Lead: ${cliente.nombre}`,
         htmlContent: `
             <!DOCTYPE html>
             <html>
@@ -309,7 +309,7 @@ export const emailTemplates = {
                             
                             <div class="action-buttons">
                                 ${cliente.telefono ? `
-                                    <a href="tel:${cliente.telefono}" class="action-btn call-btn" onclick="window.open('tel:${cliente.telefono}', '_self'); return false;">
+                                    <a href="tel:${cliente.telefono}" class="action-btn call-btn">
                                         📞 Llamar Ahora
                                     </a>
                                 ` : `
@@ -319,7 +319,7 @@ export const emailTemplates = {
                                 `}
                                 
                                 ${cliente.telefono ? `
-                                    <a href="whatsapp://send?phone=${cliente.telefono.replace(/[^0-9]/g, '')}&text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?" class="action-btn whatsapp-btn" onclick="window.open('whatsapp://send?phone=${cliente.telefono.replace(/[^0-9]/g, '')}&text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?', '_self'); return false;">
+                                    <a href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?" class="action-btn whatsapp-btn">
                                         💬 WhatsApp
                                     </a>
                                 ` : `
