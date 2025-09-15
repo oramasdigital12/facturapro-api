@@ -220,7 +220,7 @@ class EmailService {
                     .contact-value { font-size: 16px; font-weight: 600; color: #2c3e50; }
                     .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
                     .action-btn { display: inline-block; padding: 15px 20px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; transition: all 0.3s ease; }
-                    .call-btn { background: #28a745; color: white; }
+                    .call-btn { background: #2196f3; color: white; }
                     .whatsapp-btn { background: #25d366; color: white; }
                     .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
                     .quick-info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; border-radius: 8px; margin: 20px 0; }
@@ -260,7 +260,7 @@ class EmailService {
                             
                             <div class="action-buttons">
                                 ${cliente.telefono ? `
-                                    <a href="tel:${cliente.telefono}" class="action-btn call-btn">
+                                    <a href="tel:${cliente.telefono}" class="action-btn call-btn" onclick="window.open('tel:${cliente.telefono}', '_self'); return false;">
                                         📞 Llamar Ahora
                                     </a>
                                 ` : `
@@ -270,7 +270,7 @@ class EmailService {
                                 `}
                                 
                                 ${cliente.telefono ? `
-                                    <a href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?" class="action-btn whatsapp-btn">
+                                    <a href="whatsapp://send?phone=${cliente.telefono.replace(/[^0-9]/g, '')}&text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?" class="action-btn whatsapp-btn" onclick="window.open('whatsapp://send?phone=${cliente.telefono.replace(/[^0-9]/g, '')}&text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?', '_self'); return false;">
                                         💬 WhatsApp
                                     </a>
                                 ` : `
