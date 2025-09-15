@@ -206,31 +206,31 @@ class EmailService {
                 <meta charset="utf-8">
                 <title>Nuevo Lead Recibido</title>
                 <style>
-                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8f9fa; }
-                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; position: relative; overflow: hidden; }
-                    .header h1 { margin: 0; font-size: 32px; font-weight: 700; }
-                    .header .subtitle { margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; }
-                    .content { padding: 40px 30px; }
-                    .lead-card { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; position: relative; overflow: hidden; }
-                    .lead-card::before { content: '🔥'; position: absolute; top: 15px; right: 20px; font-size: 24px; opacity: 0.3; }
-                    .lead-name { font-size: 28px; font-weight: 700; margin: 0 0 15px 0; }
-                    .lead-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-                    .lead-detail { background: rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 10px; }
-                    .lead-detail-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px; }
-                    .lead-detail-value { font-size: 16px; font-weight: 600; }
-                    .cta-section { text-align: center; margin: 40px 0; }
-                    .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 18px; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
-                    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }
-                    .stat { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; }
-                    .stat-number { font-size: 24px; font-weight: 700; color: #667eea; margin-bottom: 5px; }
-                    .stat-label { font-size: 12px; text-transform: uppercase; color: #666; letter-spacing: 1px; }
-                    .footer { background-color: #f8f9fa; padding: 30px; text-align: center; font-size: 12px; color: #666; }
-                    .footer a { color: #667eea; text-decoration: none; }
-                    .urgency { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; font-weight: 600; }
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #2c3e50; margin: 0; padding: 0; background-color: #f8f9fa; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+                    .header { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 30px 20px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+                    .header .subtitle { margin: 8px 0 0 0; font-size: 16px; opacity: 0.9; }
+                    .content { padding: 30px 25px; }
+                    .lead-info { background: #ffffff; border: 2px solid #e9ecef; border-radius: 12px; padding: 25px; margin: 20px 0; }
+                    .lead-name { font-size: 24px; font-weight: 700; color: #2c3e50; margin: 0 0 20px 0; text-align: center; }
+                    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+                    .contact-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+                    .contact-label { font-size: 12px; text-transform: uppercase; color: #6c757d; font-weight: 600; margin-bottom: 5px; }
+                    .contact-value { font-size: 16px; font-weight: 600; color: #2c3e50; }
+                    .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
+                    .action-btn { display: inline-block; padding: 15px 20px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; transition: all 0.3s ease; }
+                    .call-btn { background: #28a745; color: white; }
+                    .whatsapp-btn { background: #25d366; color: white; }
+                    .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+                    .quick-info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; border-radius: 8px; margin: 20px 0; }
+                    .quick-info h4 { margin: 0 0 8px 0; color: #1976d2; font-size: 16px; }
+                    .quick-info p { margin: 0; color: #1976d2; font-size: 14px; }
+                    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; }
+                    .footer a { color: #2c3e50; text-decoration: none; }
                     @media (max-width: 600px) {
-                        .lead-details { grid-template-columns: 1fr; }
-                        .stats { grid-template-columns: 1fr; }
+                        .contact-grid { grid-template-columns: 1fr; }
+                        .action-buttons { grid-template-columns: 1fr; }
                         .header h1 { font-size: 24px; }
                         .content { padding: 20px; }
                     }
@@ -239,74 +239,65 @@ class EmailService {
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>🔥 Nuevo Lead Recibido</h1>
-                        <p class="subtitle">¡No dejes pasar esta oportunidad!</p>
+                        <h1>🔥 Nuevo Lead</h1>
+                        <p class="subtitle">Contacta ahora para maximizar la conversión</p>
                     </div>
                     
                     <div class="content">
-                        <div class="urgency">
-                            ⚡ Nuevo lead desde tu funnel web - ¡Contacta ahora!
-                        </div>
-                        
-                        <div class="lead-card">
+                        <div class="lead-info">
                             <div class="lead-name">${cliente.nombre}</div>
-                            <div class="lead-details">
-                                <div class="lead-detail">
-                                    <div class="lead-detail-label">Teléfono</div>
-                                    <div class="lead-detail-value">${cliente.telefono || 'No proporcionado'}</div>
+                            
+                            <div class="contact-grid">
+                                <div class="contact-item">
+                                    <div class="contact-label">📧 Email</div>
+                                    <div class="contact-value">${cliente.email || 'No disponible'}</div>
                                 </div>
-                                <div class="lead-detail">
-                                    <div class="lead-detail-label">Categoría</div>
-                                    <div class="lead-detail-value">${cliente.categoria || 'Lead'}</div>
+                                <div class="contact-item">
+                                    <div class="contact-label">📱 Teléfono</div>
+                                    <div class="contact-value">${cliente.telefono || 'No disponible'}</div>
                                 </div>
-                                <div class="lead-detail">
-                                    <div class="lead-detail-label">Fecha</div>
-                                    <div class="lead-detail-value">${new Date().toLocaleDateString('es-ES')}</div>
-                                </div>
-                                <div class="lead-detail">
-                                    <div class="lead-detail-label">Origen</div>
-                                    <div class="lead-detail-value">Funnel Web</div>
-                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                ${cliente.telefono ? `
+                                    <a href="tel:${cliente.telefono}" class="action-btn call-btn">
+                                        📞 Llamar Ahora
+                                    </a>
+                                ` : `
+                                    <div class="action-btn" style="background: #6c757d; color: white; cursor: not-allowed;">
+                                        📞 Sin Teléfono
+                                    </div>
+                                `}
+                                
+                                ${cliente.telefono ? `
+                                    <a href="https://wa.me/${cliente.telefono.replace(/[^0-9]/g, '')}?text=Hola%20${encodeURIComponent(cliente.nombre)},%20gracias%20por%20contactarte%20con%20nosotros.%20¿Qué%20información%20o%20servicio%20estás%20buscando?" class="action-btn whatsapp-btn">
+                                        💬 WhatsApp
+                                    </a>
+                                ` : `
+                                    <div class="action-btn" style="background: #6c757d; color: white; cursor: not-allowed;">
+                                        💬 Sin Teléfono
+                                    </div>
+                                `}
                             </div>
                         </div>
                         
-                        <div class="stats">
-                            <div class="stat">
-                                <div class="stat-number">1</div>
-                                <div class="stat-label">Nuevo Lead</div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-number">${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2, '0')}</div>
-                                <div class="stat-label">Hora de llegada</div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-number">🔥</div>
-                                <div class="stat-label">Prioridad Alta</div>
-                            </div>
+                        <div class="quick-info">
+                            <h4>💡 Información del Lead</h4>
+                            <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')} a las ${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2, '0')}</p>
+                            <p><strong>Categoría:</strong> ${cliente.categoria || 'Lead General'}</p>
+                            <p><strong>Origen:</strong> Funnel Web</p>
                         </div>
                         
-                        <div class="cta-section">
-                            <h3 style="margin-bottom: 20px; color: #333;">🚀 Gestiona este lead ahora</h3>
-                            <a href="https://leadspropr.netlify.app" class="cta-button">
-                                📊 Ir al Portal de Leads
+                        <div style="text-align: center; margin: 25px 0;">
+                            <a href="https://leadspropr.netlify.app" style="display: inline-block; background: #2c3e50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                                📊 Ver en CRM
                             </a>
-                            <p style="margin-top: 15px; color: #666; font-size: 14px;">
-                                Accede a tu panel de control para gestionar todos tus leads
-                            </p>
-                        </div>
-                        
-                        <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin: 30px 0;">
-                            <h4 style="margin: 0 0 10px 0; color: #1976d2;">💡 Consejo de ventas:</h4>
-                            <p style="margin: 0; color: #1976d2; font-size: 14px;">
-                                Este lead vino desde tu funnel web. Los leads responden mejor en las primeras 5 minutos. ¡Llama ahora para maximizar tus conversiones!
-                            </p>
                         </div>
                     </div>
                     
                     <div class="footer">
                         <p>Este es un email automático del sistema CRM</p>
-                        <p>Portal de Leads: <a href="https://leadspropr.netlify.app">leadspropr.netlify.app</a></p>
-                        <p>Si no deseas recibir estas notificaciones, puedes contactarnos para darte de baja.</p>
+                        <p>Portal: <a href="https://leadspropr.netlify.app">leadspropr.netlify.app</a></p>
                     </div>
                 </div>
             </body>
