@@ -73,6 +73,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://localhost:3000',
       'https://tuguiadigitalleadspro.netlify.app', 
       'http://localhost:5173',
+      'https://guiadigitalpr.netlify.app',
       'http://localhost:5174'
     ];
 
