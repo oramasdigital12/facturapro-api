@@ -428,38 +428,89 @@ function facturaHtmlTemplate(factura, cliente, negocio) {
 
 export async function generarYSubirPdfFactura({ factura, cliente, negocio }, userId) {
   const html = facturaHtmlTemplate(factura, cliente, negocio);
-  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  const pdfBuffer = await page.pdf({ 
-    format: 'A4', 
-    printBackground: true,
-    margin: {
-      top: '0',
-      right: '0',
-      bottom: '0',
-      left: '0'
-    }
+  
+  // 🚀 Configuración optimizada para Railway (producción con recursos limitados)
+  const browser = await puppeteer.launch({
+    headless: 'new', // Usar nuevo modo headless (más eficiente)
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage', // ⚡ CRÍTICO: Evita problemas de memoria compartida en Docker/Railway
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-extensions',
+      '--disable-background-networking',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-translate',
+      '--disable-sync',
+      '--disable-default-apps',
+      '--single-process', // ⚡ CRÍTICO: Reduce uso de memoria drásticamente
+      '--no-zygote', // Reduce procesos adicionales
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-infobars',
+      '--window-size=1920,1080'
+    ],
+    // Timeout más corto para evitar procesos zombies
+    timeout: 30000
   });
-  await browser.close();
 
-  // Crear nombre de archivo descriptivo
-  const fileName = generarNombreArchivo(factura, cliente, negocio);
-  const filePath = `${userId}/${fileName}`;
-  
-  const { error } = await supabase.storage.from(BUCKET).upload(filePath, pdfBuffer, {
-    contentType: 'application/pdf',
-    upsert: true
-  });
-  if (error) throw error;
+  let page;
+  try {
+    page = await browser.newPage();
+    
+    // Reducir uso de memoria deshabilitando recursos innecesarios
+    await page.setRequestInterception(false);
+    
+    // Configurar viewport para PDFs
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    await page.setContent(html, { 
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    });
+    
+    const pdfBuffer = await page.pdf({ 
+      format: 'A4', 
+      printBackground: true,
+      margin: {
+        top: '0',
+        right: '0',
+        bottom: '0',
+        left: '0'
+      },
+      timeout: 30000
+    });
+    
+    // Crear nombre de archivo descriptivo
+    const fileName = generarNombreArchivo(factura, cliente, negocio);
+    const filePath = `${userId}/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage.from(BUCKET).upload(filePath, pdfBuffer, {
+      contentType: 'application/pdf',
+      upsert: true
+    });
+    if (uploadError) throw uploadError;
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-  
-  // Agregar timestamp como parámetro de query para evitar cacheo
-  const timestamp = Date.now();
-  const pdfUrl = `${data.publicUrl}?t=${timestamp}`;
-  
-  return pdfUrl;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+    
+    // Agregar timestamp como parámetro de query para evitar cacheo
+    const timestamp = Date.now();
+    const pdfUrl = `${data.publicUrl}?t=${timestamp}`;
+    
+    return pdfUrl;
+  } catch (error) {
+    console.error('❌ Error generando PDF:', error);
+    throw error;
+  } finally {
+    // ⚡ CRÍTICO: SIEMPRE cerrar página y browser, incluso si hay error
+    if (page) await page.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
+  }
 }
 
 // Exportar función auxiliar para uso en otros archivos
