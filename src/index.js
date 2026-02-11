@@ -74,7 +74,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'https://tuguiadigitalleadspro.netlify.app', 
       'http://localhost:5173',
       'https://guiadigitalpr.netlify.app',
-      'http://localhost:5174'
+      'http://localhost:5174',
+      'https://creditotrabajopr.com/'
     ];
 
 // Log de dominios permitidos

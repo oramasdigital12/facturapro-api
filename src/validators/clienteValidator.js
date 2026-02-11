@@ -25,7 +25,7 @@ export const crearClienteValidator = [
   
   body('categoria')
     .optional()
-    .isIn(['lead', 'contactado', 'cotizado', 'cerrado', 'inactivo'])
+    .isIn(['lead', 'contactado', 'cotizado', 'cerrado', 'inactivo','activo'])
     .withMessage('La categoría debe ser: lead, contactado, cotizado, cerrado o inactivo'),
   
   body('fecha_nacimiento')
