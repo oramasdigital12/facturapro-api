@@ -1,7 +1,6 @@
-import puppeteer from 'puppeteer';
+import PDFDocument from 'pdfkit';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
-import path from 'path';
+import { Readable } from 'stream';
 
 // Configuración de Supabase Storage
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -19,474 +18,246 @@ function generarNombreArchivo(factura, cliente, negocio) {
   return `${nombreNegocio}-${nombreCliente}-${numeroFacturaFormateado}.pdf`;
 }
 
-function facturaHtmlTemplate(factura, cliente, negocio) {
-  // Determinar estado
-  const estado = factura.estado === 'pagada' ? 'PAID' : 'PENDING';
-  const colorEstado = factura.estado === 'pagada' ? '#4CAF50' : '#F7E7A6';
-  const colorTextoEstado = factura.estado === 'pagada' ? '#218838' : '#8a6d3b';
-  const colorFondoEstado = factura.estado === 'pagada' ? '#e6f9ec' : '#fdf6d7';
-  
-  // Usar color personalizado del negocio o azul oscuro por defecto
-  const colorNegocio = negocio?.color_personalizado || '#1e3a8a';
-  
-  return `
-  <html>
-    <head>
-      <meta charset="utf-8" />
-      <title>Invoice #100${factura.numero_factura || '000'}</title>
-      <style>
-        @page {
-          size: A4;
-          margin: 0;
-        }
-        
-        body {
-          font-family: 'Segoe UI', Arial, sans-serif;
-          background: #fff;
-          color: #222;
-          margin: 0;
-          padding: 0;
-          line-height: 1.4;
-        }
-        
-        .invoice-container {
-          max-width: 800px;
-          margin: 0 auto;
-          background: #fff;
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        /* Header Section */
-        .header {
-          background: ${colorNegocio};
-          color: white;
-          padding: 30px;
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-        
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-        
-        .logo-placeholder {
-          width: 80px;
-          height: 80px;
-          background: rgba(255,255,255,0.2);
-          border: 2px dashed rgba(255,255,255,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          color: rgba(255,255,255,0.7);
-          text-align: center;
-        }
-        
-        .logo {
-          width: 80px;
-          height: 80px;
-          object-fit: contain;
-          border-radius: 8px;
-          background: white;
-        }
-        
-        .invoice-title {
-          font-size: 2.5rem;
-          font-weight: bold;
-          margin: 0;
-        }
-        
-        .business-info {
-          text-align: right;
-        }
-        
-        .business-name {
-          font-size: 1.3rem;
-          font-weight: bold;
-          margin-bottom: 5px;
-        }
-        
-        .business-details {
-          font-size: 0.95rem;
-          line-height: 1.3;
-        }
-        
-        /* Main Content */
-        .main-content {
-          padding: 30px;
-          flex: 1;
-        }
-        
-        .invoice-details-section {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 30px;
-          padding-bottom: 20px;
-          border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .invoice-details {
-          flex: 1;
-        }
-        
-        .bill-to {
-          flex: 1;
-          text-align: right;
-        }
-        
-        .section-title {
-          font-weight: bold;
-          font-size: 1.1rem;
-          margin-bottom: 10px;
-          color: ${colorNegocio};
-        }
-        
-        .detail-row {
-          margin-bottom: 5px;
-          font-size: 0.95rem;
-        }
-        
-        .detail-label {
-          font-weight: bold;
-          color: #666;
-        }
-        
-        /* Items Table */
-        .items-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 30px;
-        }
-        
-        .items-table th {
-          background: #f8f9fa;
-          padding: 12px 8px;
-          text-align: left;
-          font-weight: bold;
-          color: ${colorNegocio};
-          border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .items-table td {
-          padding: 12px 8px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .items-table tr:nth-child(even) {
-          background: #fafafa;
-        }
-        
-        /* Bottom Section */
-        .bottom-section {
-          display: flex;
-          justify-content: space-between;
-          gap: 40px;
-        }
-        
-        .terms-section {
-          flex: 1;
-        }
-        
-        .terms-content {
-          text-align: justify;
-          white-space: pre-wrap;
-          word-wrap: break-word;
-          line-height: 1.5;
-          font-size: 0.9rem;
-          color: #555;
-        }
-        
-        .totals-section {
-          flex: 0 0 200px;
-          text-align: right;
-        }
-        
-        .total-row {
-          margin-bottom: 8px;
-          font-size: 0.95rem;
-        }
-        
-        .total-row.total {
-          font-size: 1.1rem;
-          font-weight: bold;
-          color: ${colorNegocio};
-          border-top: 2px solid #e0e0e0;
-          padding-top: 8px;
-          margin-top: 8px;
-        }
-        
-        .total-label {
-          display: inline-block;
-          width: 80px;
-          text-align: left;
-        }
-        
-        .total-value {
-          display: inline-block;
-          width: 80px;
-          text-align: right;
-        }
-        
-        /* Status Badge */
-        .status-badge {
-          margin-top: 20px;
-          background: ${colorFondoEstado};
-          color: ${colorTextoEstado};
-          font-weight: bold;
-          font-size: 1.2rem;
-          padding: 12px 24px;
-          border-radius: 25px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          text-align: center;
-          display: inline-block;
-        }
-        
-        /* Footer */
-        .footer {
-          background: ${colorNegocio};
-          color: white;
-          padding: 15px 30px;
-          text-align: center;
-          font-size: 0.9rem;
-          margin-top: auto;
-        }
-        
-        .footer-logo {
-          width: 20px;
-          height: 20px;
-          object-fit: contain;
-          border-radius: 50%;
-          background: white;
-          padding: 2px;
-        }
-        
-        /* Page Break */
-        .page-break {
-          page-break-before: always;
-        }
-        
-        /* Ensure footer stays at bottom */
-        .invoice-container {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .main-content {
-          flex: 1;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="invoice-container">
-        <!-- Header -->
-        <div class="header">
-          <div class="header-left">
-            ${factura.logo_personalizado_url || negocio?.logo_url ? 
-              `<img src="${factura.logo_personalizado_url || negocio.logo_url}" class="logo" alt="Logo" />` : 
-              `<div class="logo-placeholder">Your Company<br>Logo</div>`
-            }
-            <h1 class="invoice-title">INVOICE</h1>
-          </div>
-          <div class="business-info">
-            <div class="business-name">${factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name'}</div>
-            <div class="business-details">
-              ${negocio?.direccion || ''}<br>
-              ${negocio?.telefono || ''}<br>
-              ${factura.email || negocio?.email || ''}
-            </div>
-          </div>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="main-content">
-          <!-- Invoice Details Section -->
-          <div class="invoice-details-section">
-            <div class="invoice-details">
-              <div class="section-title">INVOICE DETAILS:</div>
-              <div class="detail-row">
-                <span class="detail-label">Invoice #:</span> 100${factura.numero_factura || '000'}
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Date of Issue:</span> ${factura.fecha_factura || 'MM/DD/YYYY'}
-              </div>
-              ${factura.fecha_vencimiento && factura.fecha_vencimiento !== '1999-99-99' && factura.fecha_vencimiento !== null ? `
-              <div class="detail-row">
-                <span class="detail-label">Due Date:</span> ${factura.fecha_vencimiento}
-              </div>
-              ` : ''}
-            </div>
-            <div class="bill-to">
-              <div class="section-title">BILL TO:</div>
-              <div class="detail-row">${cliente?.nombre || 'CUSTOMER NAME'}</div>
-              <div class="detail-row">${cliente?.direccion || ''}</div>
-              <div class="detail-row">${cliente?.email || ''}</div>
-              <div class="detail-row">${cliente?.telefono || ''}</div>
-            </div>
-          </div>
-          
-          <!-- Items Table -->
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th>PRODUCT/SERVICE</th>
-                <th>DESCRIPTION</th>
-                <th>QTY/HRS</th>
-                <th>RATE</th>
-                <th>AMOUNT</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${factura.items && factura.items.length > 0 ? factura.items.map(item => `
-                <tr>
-                  <td>${item.categoria || 'Product/Service'}</td>
-                  <td>${item.descripcion || 'Description'}</td>
-                  <td>${item.cantidad || '1'}</td>
-                  <td>$${Number(item.precio_unitario || 0).toFixed(2)}</td>
-                  <td>$${Number(item.total || 0).toFixed(2)}</td>
-                </tr>
-              `).join('') : `
-                <tr>
-                  <td>Placeholder</td>
-                  <td>Text</td>
-                  <td>000</td>
-                  <td>000</td>
-                  <td>000</td>
-                </tr>
-              `}
-            </tbody>
-          </table>
-          
-          <!-- Bottom Section -->
-          <div class="bottom-section">
-            <div class="terms-section">
-              ${(factura.terminos && factura.terminos.trim() !== '') || (negocio?.terminos_condiciones && negocio.terminos_condiciones.trim() !== '') ? `
-              <div class="section-title">TERMS</div>
-              <div class="terms-content">${factura.terminos || negocio?.terminos_condiciones || ''}</div>
-              ` : ''}
-              
-              ${(factura.nota && factura.nota.trim() !== '') || (negocio?.nota_factura && negocio.nota_factura.trim() !== '') ? `
-              <div class="section-title" style="margin-top: 20px;">CONDITIONS/INSTRUCTIONS</div>
-              <div class="terms-content">${factura.nota || negocio?.nota_factura || ''}</div>
-              ` : ''}
-            </div>
-            
-            <div class="totals-section">
-              <div class="total-row">
-                <span class="total-label">Subtotal:</span>
-                <span class="total-value">$${Number(factura.subtotal || 0).toFixed(2)}</span>
-              </div>
-                                                           ${factura.descuento && factura.descuento > 0 ? `
-                 <div class="total-row">
-                   <span class="total-label">Descuento (${Math.round((factura.descuento / factura.subtotal) * 100)}%):</span>
-                   <span class="total-value" style="color: #dc3545;">-$${Number(factura.descuento || 0).toFixed(2)}</span>
-                 </div>
-                 ` : ''}
-              <div class="total-row">
-                <span class="total-label">Tax:</span>
-                <span class="total-value">$${Number(factura.impuesto || 0).toFixed(2)}</span>
-              </div>
-              <div class="total-row total">
-                <span class="total-label">TOTAL:</span>
-                <span class="total-value">$${Number(factura.total || 0).toFixed(2)}</span>
-              </div>
-              <div class="total-row">
-                <span class="total-label">Deposit:</span>
-                <span class="total-value">$${Number(factura.deposito || 0).toFixed(2)}</span>
-              </div>
-              <div class="total-row total">
-                <span class="total-label">BALANCE:</span>
-                <span class="total-value">$${Number(factura.balance_restante || 0).toFixed(2)}</span>
-              </div>
-              
-              <!-- Status Badge - Más grande y debajo del BALANCE -->
-              ${estado ? `<div class="status-badge">${estado}</div>` : ''}
-            </div>
-          </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${factura.logo_personalizado_url || negocio?.logo_url ? 
-              `<img src="${factura.logo_personalizado_url || negocio.logo_url}" class="footer-logo" alt="Logo" />` : 
-              `<div style="width: 20px; height: 20px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: ${colorNegocio}; font-size: 12px;">F</div>`
-            }
-            <span>${factura.nombre_negocio || negocio?.nombre_negocio || 'FreshBooks'}</span>
-          </div>
-        </div>
-      </div>
-    </body>
-  </html>
-  `;
+// 🚀 Convertir stream a buffer
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', chunk => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
 }
 
+// 🎨 Generar PDF con PDFKit (SIN BROWSER - 10x más rápido y eficiente)
 export async function generarYSubirPdfFactura({ factura, cliente, negocio }, userId) {
-  const html = facturaHtmlTemplate(factura, cliente, negocio);
-  
-  // 🚀 Configuración optimizada para Railway (producción con recursos limitados)
-  const browser = await puppeteer.launch({
-    headless: 'new', // Usar nuevo modo headless (más eficiente)
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage', // ⚡ CRÍTICO: Evita problemas de memoria compartida en Docker/Railway
-      '--disable-gpu',
-      '--disable-software-rasterizer',
-      '--disable-extensions',
-      '--disable-background-networking',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding',
-      '--disable-translate',
-      '--disable-sync',
-      '--disable-default-apps',
-      '--single-process', // ⚡ CRÍTICO: Reduce uso de memoria drásticamente
-      '--no-zygote', // Reduce procesos adicionales
-      '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process',
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--disable-infobars',
-      '--window-size=1920,1080'
-    ],
-    // Timeout más corto para evitar procesos zombies
-    timeout: 30000
-  });
-
-  let page;
   try {
-    page = await browser.newPage();
-    
-    // Reducir uso de memoria deshabilitando recursos innecesarios
-    await page.setRequestInterception(false);
-    
-    // Configurar viewport para PDFs
-    await page.setViewport({ width: 1920, height: 1080 });
-    
-    await page.setContent(html, { 
-      waitUntil: 'networkidle0',
-      timeout: 30000
+    // Crear documento PDF
+    const doc = new PDFDocument({ 
+      size: 'A4', 
+      margin: 0,
+      bufferPages: true
     });
+
+    // Buffer para almacenar el PDF
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => {});
+
+    // Usar color personalizado del negocio o azul oscuro por defecto
+    const colorNegocio = negocio?.color_personalizado || '#1e3a8a';
     
-    const pdfBuffer = await page.pdf({ 
-      format: 'A4', 
-      printBackground: true,
-      margin: {
-        top: '0',
-        right: '0',
-        bottom: '0',
-        left: '0'
-      },
-      timeout: 30000
+    // Determinar estado
+    const estado = factura.estado === 'pagada' ? 'PAID' : 'PENDING';
+    const colorEstado = factura.estado === 'pagada' ? '#4CAF50' : '#F7E7A6';
+
+    // =====================
+    // HEADER SECTION
+    // =====================
+    doc.rect(0, 0, 595, 120).fill(colorNegocio);
+    
+    // Logo placeholder o texto
+    doc.fontSize(48)
+       .fillColor('#FFFFFF')
+       .text('INVOICE', 80, 40);
+
+    // Información del negocio (derecha)
+    doc.fontSize(14)
+       .fillColor('#FFFFFF')
+       .text(factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name', 350, 40, { 
+         width: 200, 
+         align: 'right' 
+       });
+    
+    doc.fontSize(9)
+       .text(negocio?.direccion || '', 350, 60, { width: 200, align: 'right' })
+       .text(negocio?.telefono || '', 350, 75, { width: 200, align: 'right' })
+       .text(factura.email || negocio?.email || '', 350, 90, { width: 200, align: 'right' });
+
+    // =====================
+    // INVOICE DETAILS SECTION
+    // =====================
+    doc.fillColor('#000000');
+    
+    // Invoice Details (izquierda)
+    doc.fontSize(12)
+       .fillColor(colorNegocio)
+       .text('INVOICE DETAILS:', 50, 150);
+    
+    doc.fontSize(10)
+       .fillColor('#000000')
+       .text(`Invoice #: 100${factura.numero_factura || '000'}`, 50, 170)
+       .text(`Date of Issue: ${factura.fecha_factura || 'MM/DD/YYYY'}`, 50, 185);
+    
+    if (factura.fecha_vencimiento && factura.fecha_vencimiento !== '1999-99-99' && factura.fecha_vencimiento !== null) {
+      doc.text(`Due Date: ${factura.fecha_vencimiento}`, 50, 200);
+    }
+
+    // Bill To (derecha)
+    doc.fontSize(12)
+       .fillColor(colorNegocio)
+       .text('BILL TO:', 350, 150);
+    
+    doc.fontSize(10)
+       .fillColor('#000000')
+       .text(cliente?.nombre || 'CUSTOMER NAME', 350, 170)
+       .text(cliente?.direccion || '', 350, 185)
+       .text(cliente?.email || '', 350, 200)
+       .text(cliente?.telefono || '', 350, 215);
+
+    // Línea separadora
+    doc.moveTo(50, 240)
+       .lineTo(545, 240)
+       .stroke('#e0e0e0');
+
+    // =====================
+    // ITEMS TABLE
+    // =====================
+    let yPos = 260;
+    
+    // Header de tabla
+    doc.rect(50, yPos, 495, 25).fill('#f8f9fa');
+    doc.fontSize(10)
+       .fillColor(colorNegocio)
+       .text('PRODUCT/SERVICE', 60, yPos + 8, { width: 100 })
+       .text('DESCRIPTION', 170, yPos + 8, { width: 150 })
+       .text('QTY', 330, yPos + 8, { width: 40 })
+       .text('RATE', 380, yPos + 8, { width: 60 })
+       .text('AMOUNT', 450, yPos + 8, { width: 85, align: 'right' });
+
+    yPos += 25;
+
+    // Items
+    const items = factura.items && factura.items.length > 0 ? factura.items : [
+      { categoria: 'Placeholder', descripcion: 'Text', cantidad: '000', precio_unitario: 0, total: 0 }
+    ];
+
+    doc.fillColor('#000000');
+    items.forEach((item, index) => {
+      if (index % 2 === 0) {
+        doc.rect(50, yPos, 495, 25).fill('#fafafa');
+      }
+      
+      doc.fontSize(9)
+         .fillColor('#000000')
+         .text(item.categoria || 'Product', 60, yPos + 8, { width: 100 })
+         .text(item.descripcion || 'Description', 170, yPos + 8, { width: 150 })
+         .text(item.cantidad || '1', 330, yPos + 8, { width: 40 })
+         .text(`$${Number(item.precio_unitario || 0).toFixed(2)}`, 380, yPos + 8, { width: 60 })
+         .text(`$${Number(item.total || 0).toFixed(2)}`, 450, yPos + 8, { width: 85, align: 'right' });
+      
+      yPos += 25;
     });
+
+    yPos += 20;
+
+    // =====================
+    // TOTALS SECTION
+    // =====================
+    const totalsX = 380;
     
-    // Crear nombre de archivo descriptivo
+    doc.fontSize(10)
+       .fillColor('#000000')
+       .text('Subtotal:', totalsX, yPos, { width: 70 })
+       .text(`$${Number(factura.subtotal || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+    
+    yPos += 20;
+
+    // Descuento (si existe)
+    if (factura.descuento && factura.descuento > 0) {
+      const descuentoPct = Math.round((factura.descuento / factura.subtotal) * 100);
+      doc.fillColor('#dc3545')
+         .text(`Descuento (${descuentoPct}%):`, totalsX, yPos, { width: 70 })
+         .text(`-$${Number(factura.descuento || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+      yPos += 20;
+    }
+
+    // Tax
+    doc.fillColor('#000000')
+       .text('Tax:', totalsX, yPos, { width: 70 })
+       .text(`$${Number(factura.impuesto || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+    
+    yPos += 20;
+
+    // Total
+    doc.moveTo(totalsX, yPos - 5)
+       .lineTo(545, yPos - 5)
+       .stroke('#e0e0e0');
+    
+    doc.fontSize(12)
+       .fillColor(colorNegocio)
+       .text('TOTAL:', totalsX, yPos, { width: 70 })
+       .text(`$${Number(factura.total || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+    
+    yPos += 25;
+
+    // Deposit
+    doc.fontSize(10)
+       .fillColor('#000000')
+       .text('Deposit:', totalsX, yPos, { width: 70 })
+       .text(`$${Number(factura.deposito || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+    
+    yPos += 20;
+
+    // Balance
+    doc.fontSize(12)
+       .fillColor(colorNegocio)
+       .text('BALANCE:', totalsX, yPos, { width: 70 })
+       .text(`$${Number(factura.balance_restante || 0).toFixed(2)}`, totalsX + 70, yPos, { width: 85, align: 'right' });
+
+    yPos += 30;
+
+    // Status Badge
+    if (estado) {
+      const badgeColor = factura.estado === 'pagada' ? '#e6f9ec' : '#fdf6d7';
+      const badgeTextColor = factura.estado === 'pagada' ? '#218838' : '#8a6d3b';
+      
+      doc.roundedRect(totalsX + 20, yPos, 120, 35, 18)
+         .fill(badgeColor);
+      
+      doc.fontSize(14)
+         .fillColor(badgeTextColor)
+         .text(estado, totalsX + 20, yPos + 10, { width: 120, align: 'center' });
+    }
+
+    // =====================
+    // TERMS SECTION (si existe)
+    // =====================
+    yPos += 50;
+    
+    if ((factura.terminos && factura.terminos.trim() !== '') || 
+        (negocio?.terminos_condiciones && negocio.terminos_condiciones.trim() !== '')) {
+      doc.fontSize(12)
+         .fillColor(colorNegocio)
+         .text('TERMS', 50, yPos);
+      
+      doc.fontSize(9)
+         .fillColor('#555555')
+         .text(factura.terminos || negocio?.terminos_condiciones || '', 50, yPos + 20, { 
+           width: 300, 
+           align: 'justify' 
+         });
+    }
+
+    // =====================
+    // FOOTER
+    // =====================
+    const footerY = 780;
+    doc.rect(0, footerY, 595, 62).fill(colorNegocio);
+    
+    doc.fontSize(10)
+       .fillColor('#FFFFFF')
+       .text(factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name', 0, footerY + 25, { 
+         width: 595, 
+         align: 'center' 
+       });
+
+    // Finalizar documento
+    doc.end();
+
+    // Esperar a que se complete el stream
+    const pdfBuffer = await streamToBuffer(doc);
+
+    // Subir a Supabase Storage
     const fileName = generarNombreArchivo(factura, cliente, negocio);
     const filePath = `${userId}/${fileName}`;
     
@@ -494,24 +265,23 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
       contentType: 'application/pdf',
       upsert: true
     });
+    
     if (uploadError) throw uploadError;
 
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
     
-    // Agregar timestamp como parámetro de query para evitar cacheo
+    // Agregar timestamp para evitar cacheo
     const timestamp = Date.now();
     const pdfUrl = `${data.publicUrl}?t=${timestamp}`;
     
+    console.log('✅ PDF generado exitosamente con PDFKit (sin browser)');
     return pdfUrl;
+
   } catch (error) {
-    console.error('❌ Error generando PDF:', error);
+    console.error('❌ Error generando PDF con PDFKit:', error);
     throw error;
-  } finally {
-    // ⚡ CRÍTICO: SIEMPRE cerrar página y browser, incluso si hay error
-    if (page) await page.close().catch(() => {});
-    if (browser) await browser.close().catch(() => {});
   }
 }
 
-// Exportar función auxiliar para uso en otros archivos
-export { generarNombreArchivo }; 
+// Exportar función auxiliar
+export { generarNombreArchivo };
