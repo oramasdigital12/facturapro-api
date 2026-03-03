@@ -1,6 +1,5 @@
 import PDFDocument from 'pdfkit';
 import { createClient } from '@supabase/supabase-js';
-import { Readable } from 'stream';
 import axios from 'axios';
 
 // Configuración de Supabase Storage
@@ -19,30 +18,38 @@ function generarNombreArchivo(factura, cliente, negocio) {
   return `${nombreNegocio}-${nombreCliente}-${numeroFacturaFormateado}.pdf`;
 }
 
-// 🚀 Convertir stream a buffer
-function streamToBuffer(stream) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    stream.on('data', chunk => chunks.push(chunk));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-    stream.on('error', reject);
-  });
-}
-
 // 🎨 Generar PDF con PDFKit (SIN BROWSER - 10x más rápido y eficiente)
 export async function generarYSubirPdfFactura({ factura, cliente, negocio }, userId) {
   try {
-    // Crear documento PDF
+    // Descargar logo ANTES de crear el documento PDF (si existe)
+    let logoBuffer = null;
+    const logoUrl = factura.logo_personalizado_url || negocio?.logo_url;
+    
+    if (logoUrl) {
+      try {
+        const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+        logoBuffer = Buffer.from(logoResponse.data);
+      } catch (error) {
+        console.warn('⚠️ No se pudo cargar el logo:', error.message);
+      }
+    }
+
+    // Crear documento PDF DESPUÉS de descargar recursos
     const doc = new PDFDocument({ 
       size: 'A4', 
       margin: 0,
       bufferPages: true
     });
 
-    // Buffer para almacenar el PDF
+    // Capturar chunks del stream
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
-    doc.on('end', () => {});
+
+    // Promesa para esperar que el stream termine
+    const pdfPromise = new Promise((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
 
     // Usar color personalizado del negocio o azul oscuro por defecto
     const colorNegocio = negocio?.color_personalizado || '#1e3a8a';
@@ -58,25 +65,17 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
     
     // 🖼️ Logo del negocio (izquierda) - Si existe
     let logoWidth = 0;
-    const logoUrl = factura.logo_personalizado_url || negocio?.logo_url;
     
-    if (logoUrl) {
+    if (logoBuffer) {
       try {
-        // Descargar logo desde URL
-        const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-        const logoBuffer = Buffer.from(logoResponse.data);
-        
-        // Insertar logo en PDF
         doc.image(logoBuffer, 50, 30, { 
           fit: [60, 60],
           align: 'left',
           valign: 'top'
         });
-        
-        logoWidth = 80; // Espacio ocupado por el logo
+        logoWidth = 80;
       } catch (error) {
-        console.warn('⚠️ No se pudo cargar el logo:', error.message);
-        // Si falla, continuar sin logo
+        console.warn('⚠️ No se pudo insertar el logo en PDF:', error.message);
         logoWidth = 0;
       }
     }
@@ -284,8 +283,8 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
     // Finalizar documento
     doc.end();
 
-    // Esperar a que se complete el stream
-    const pdfBuffer = await streamToBuffer(doc);
+    // ⚡ Esperar a que se complete el stream CORRECTAMENTE
+    const pdfBuffer = await pdfPromise;
 
     // Subir a Supabase Storage
     const fileName = generarNombreArchivo(factura, cliente, negocio);
