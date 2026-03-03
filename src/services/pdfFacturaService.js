@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { createClient } from '@supabase/supabase-js';
 import { Readable } from 'stream';
+import axios from 'axios';
 
 // Configuración de Supabase Storage
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -55,23 +56,52 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
     // =====================
     doc.rect(0, 0, 595, 120).fill(colorNegocio);
     
-    // Logo placeholder o texto
+    // 🖼️ Logo del negocio (izquierda) - Si existe
+    let logoWidth = 0;
+    const logoUrl = factura.logo_personalizado_url || negocio?.logo_url;
+    
+    if (logoUrl) {
+      try {
+        // Descargar logo desde URL
+        const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+        const logoBuffer = Buffer.from(logoResponse.data);
+        
+        // Insertar logo en PDF
+        doc.image(logoBuffer, 50, 30, { 
+          fit: [60, 60],
+          align: 'left',
+          valign: 'top'
+        });
+        
+        logoWidth = 80; // Espacio ocupado por el logo
+      } catch (error) {
+        console.warn('⚠️ No se pudo cargar el logo:', error.message);
+        // Si falla, continuar sin logo
+        logoWidth = 0;
+      }
+    }
+    
+    // Texto "INVOICE" (a la derecha del logo o en la izquierda si no hay logo)
+    const invoiceTextX = logoWidth > 0 ? 50 + logoWidth : 50;
     doc.fontSize(48)
        .fillColor('#FFFFFF')
-       .text('INVOICE', 80, 40);
+       .text('INVOICE', invoiceTextX, 40);
 
-    // Información del negocio (derecha)
-    doc.fontSize(14)
+    // Información del negocio (derecha) - AJUSTADO PARA NO TAPAR
+    const businessInfoX = 320;
+    
+    doc.fontSize(13)
        .fillColor('#FFFFFF')
-       .text(factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name', 350, 40, { 
-         width: 200, 
+       .text(factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name', businessInfoX, 30, { 
+         width: 225, 
          align: 'right' 
        });
     
-    doc.fontSize(9)
-       .text(negocio?.direccion || '', 350, 60, { width: 200, align: 'right' })
-       .text(negocio?.telefono || '', 350, 75, { width: 200, align: 'right' })
-       .text(factura.email || negocio?.email || '', 350, 90, { width: 200, align: 'right' });
+    // Ajustar posición vertical para que no se tapen
+    doc.fontSize(8.5)
+       .text(negocio?.direccion || '', businessInfoX, 50, { width: 225, align: 'right' })
+       .text(negocio?.telefono || '', businessInfoX, 68, { width: 225, align: 'right' })
+       .text(factura.email || negocio?.email || '', businessInfoX, 86, { width: 225, align: 'right' });
 
     // =====================
     // INVOICE DETAILS SECTION
