@@ -86,21 +86,54 @@ export async function generarYSubirPdfFactura({ factura, cliente, negocio }, use
        .fillColor('#FFFFFF')
        .text('INVOICE', invoiceTextX, 40);
 
-    // Información del negocio (derecha) - AJUSTADO PARA NO TAPAR
+    // Información del negocio (derecha) - DINÁMICO PARA EVITAR SOBREPOSICIÓN
     const businessInfoX = 320;
+    const businessInfoWidth = 225;
     
-    doc.fontSize(13)
-       .fillColor('#FFFFFF')
-       .text(factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name', businessInfoX, 30, { 
-         width: 225, 
-         align: 'right' 
-       });
+    // Nombre del negocio con tamaño dinámico
+    const nombreNegocio = factura.nombre_negocio || negocio?.nombre_negocio || 'Business Name';
+    doc.fontSize(13).fillColor('#FFFFFF');
     
-    // Ajustar posición vertical para que no se tapen
-    doc.fontSize(8.5)
-       .text(negocio?.direccion || '', businessInfoX, 50, { width: 225, align: 'right' })
-       .text(negocio?.telefono || '', businessInfoX, 68, { width: 225, align: 'right' })
-       .text(factura.email || negocio?.email || '', businessInfoX, 86, { width: 225, align: 'right' });
+    // Calcular altura real del nombre (puede ocupar múltiples líneas)
+    const alturaTextoNombre = doc.heightOfString(nombreNegocio, { 
+      width: businessInfoWidth, 
+      align: 'right' 
+    });
+    
+    // Renderizar nombre
+    doc.text(nombreNegocio, businessInfoX, 30, { 
+      width: businessInfoWidth, 
+      align: 'right' 
+    });
+    
+    // Calcular posición inicial para los siguientes elementos (debajo del nombre)
+    let currentY = 30 + alturaTextoNombre + 8; // 8px de separación
+    
+    // Dirección
+    if (negocio?.direccion) {
+      doc.fontSize(8.5).text(negocio.direccion, businessInfoX, currentY, { 
+        width: businessInfoWidth, 
+        align: 'right' 
+      });
+      currentY += doc.heightOfString(negocio.direccion, { width: businessInfoWidth, align: 'right' }) + 6;
+    }
+    
+    // Teléfono
+    if (negocio?.telefono) {
+      doc.fontSize(8.5).text(negocio.telefono, businessInfoX, currentY, { 
+        width: businessInfoWidth, 
+        align: 'right' 
+      });
+      currentY += 14; // Espacio fijo para teléfono
+    }
+    
+    // Email
+    if (factura.email || negocio?.email) {
+      doc.fontSize(8.5).text(factura.email || negocio?.email || '', businessInfoX, currentY, { 
+        width: businessInfoWidth, 
+        align: 'right' 
+      });
+    }
 
     // =====================
     // INVOICE DETAILS SECTION
